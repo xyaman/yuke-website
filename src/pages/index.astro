@@ -1,0 +1,429 @@
+---
+// Hand-written landing page. Intentionally outside Starlight's chrome:
+// no Starlight components, no Starlight CSS. The docs site under
+// /<topic>/ uses Starlight's theme; this page has its own minimal styling.
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark light" />
+		<title>yuke: a minimal CLI for running LLM agents</title>
+		<meta
+			name="description"
+			content="A minimal CLI for running LLM agents against any OpenAI-compatible endpoint. Oneshot mode, daemon mode over WebSocket, configured in Lua and JSON."
+		/>
+		<link rel="icon" href="/yuke-website/favicon.ico" sizes="any" />
+		<link rel="icon" href="/yuke-website/favicon-32.png" type="image/png" sizes="32x32" />
+		<link rel="apple-touch-icon" href="/yuke-website/apple-touch-icon.png" />
+		<link rel="stylesheet" href="/yuke-website/landing.css" />
+	</head>
+	<body class="yuke-landing">
+		<header class="site-header">
+			<a class="brand" href="/yuke-website/">
+				<img src="/yuke-website/logo.png" alt="" width="36" height="36" />
+				<span>yuke</span>
+			</a>
+			<nav class="site-nav">
+				<a href="/yuke-website/getting-started/">Docs</a>
+				<a href="/yuke-website/wire-protocol/">Wire protocol</a>
+				<a href="https://github.com/xyaman/yuke">GitHub</a>
+			</nav>
+		</header>
+
+		<main>
+			<section class="hero">
+				<div class="split">
+					<div class="split-text">
+						<img class="hero-mascot pixel" src="/yuke-website/bull/bull-charge.png" alt="" width="96" height="96" />
+						<h1>A minimal CLI for running LLM agents.</h1>
+						<p class="tagline">
+							Oneshot mode, daemon mode over WebSocket, configured in Lua and JSON. Talk to any
+							OpenAI-compatible endpoint.
+						</p>
+						<div class="hero-actions">
+							<a class="cta" href="/yuke-website/getting-started/">Get started →</a>
+							<a class="cta cta-secondary" href="https://github.com/xyaman/yuke">View on GitHub</a>
+						</div>
+					</div>
+					<div class="split-visual">
+						<pre class="install"><code>$ cargo install yuke
+$ yuke -p "summarize src/"
+[ streams one assistant turn ]</code></pre>
+						<p class="hero-aside">
+							One Rust binary. Sessions persist to <code>~/.yuke/workspaces/</code> for resume.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="trust">
+				<span class="trust-label">Works with</span>
+				<ul class="trust-list">
+					<li>OpenAI</li>
+					<li>Anthropic</li>
+					<li>MiniMax</li>
+					<li>any OpenAI-compatible host</li>
+				</ul>
+			</section>
+
+			<section class="demo-section">
+				<div class="split">
+					<div class="split-text">
+						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Oneshot mode</h2>
+						<p class="section-lede">
+							Run one assistant turn in-process, no server. The CLI loads <code>~/.yuke/providers.json</code>
+							for the catalog and <code>~/.yuke/init.lua</code> for tools and hooks. Sessions persist under
+							<code>~/.yuke/workspaces/</code> so <code>--resume</code> picks them back up.
+						</p>
+						<ul class="demo-bullets">
+							<li>One turn, one binary, no server</li>
+							<li>Resume a session later with <code>--resume &lt;id&gt;</code></li>
+							<li>Scriptable: <code>--output-format json</code> returns a result with <code>session_id</code></li>
+						</ul>
+					</div>
+					<div class="split-visual">
+						<pre class="terminal"><code><span class="t-prompt">$</span> yuke -p "refactor the parser to use the new Error type"
+
+  <span class="t-tool">read</span> src/parse.rs
+  <span class="t-tool">read</span> src/error.rs
+
+  Reading the current implementation and the new Error type.
+  The change touches 47 lines across 3 functions.
+
+  <span class="t-ok">✓</span> Done. 4 rounds, 12.4k tokens.</code></pre>
+					</div>
+				</div>
+			</section>
+
+			<section class="architecture-section">
+				<div class="split">
+					<div class="split-text">
+						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> How it fits together</h2>
+						<p class="section-lede">
+							One binary, two modes. The CLI is the client; <code>yuke daemon</code> runs an optional
+							long-lived server that any WebSocket client can talk to.
+						</p>
+						<ul class="demo-bullets">
+							<li>CLI and daemon share one binary</li>
+							<li>Multiple clients see one live event stream</li>
+							<li>Wire protocol is <a href="/yuke-website/asyncapi.json">documented</a>, generated from Rust types</li>
+						</ul>
+					</div>
+					<div class="split-visual">
+						<pre class="diagram"><code>  ┌──────────┐    ws://127.0.0.1:7878/ws    ┌──────────────┐
+  │ yuke CLI │ ◄──────────────────────────► │ yuke daemon  │
+  └──────────┘                              └──────┬───────┘
+                                                   │
+                          ┌────────────────────────┼────────────────┐
+                          │                        │                │
+                          ▼                        ▼                ▼
+                   ┌──────────┐             ┌──────────┐     ┌──────────┐
+                   │ TUI      │             │ editor   │     │ your own │
+                   │ client   │             │ plugin   │     │ client   │
+                   └──────────┘             └──────────┘     └──────────┘</code></pre>
+					</div>
+				</div>
+			</section>
+
+			<section class="demo-section">
+				<div class="split split-flip">
+					<div class="split-text">
+						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Daemon mode</h2>
+						<p class="section-lede">
+							Start the daemon once, connect any client. Sessions persist under
+							<code>~/.yuke/workspaces/</code> and stream events to every connected client in
+							real time.
+						</p>
+						<ul class="demo-bullets">
+							<li>Long-lived sessions, shareable across clients</li>
+							<li>JSON-over-WebSocket, generated from Rust types</li>
+							<li>Build a TUI in Elm, Ratatui, Bubble Tea, GPUI</li>
+						</ul>
+						<p class="section-trailer">
+							Full schema at <a href="/yuke-website/asyncapi.json">/asyncapi.json</a> ·
+							<a href="/yuke-website/wire-protocol/">human-readable guide →</a>
+						</p>
+					</div>
+					<div class="split-visual">
+						<pre class="terminal"><code><span class="t-comment"># Terminal 1</span>
+<span class="t-prompt">$</span> yuke daemon
+  <span class="t-info">[daemon]</span> listening on ws://127.0.0.1:7878/ws
+
+<span class="t-comment"># Terminal 2: any WebSocket client</span>
+<span class="t-prompt">$</span> yuke -p "explain this codebase"
+
+<span class="t-comment"># Or wire-protocol level:</span>
+  <span class="t-info">←</span> &#123; <span class="t-s">"Hello"</span>: &#123; <span class="t-s">"models"</span>: [...] &#125; &#125;
+  <span class="t-info">→</span> &#123; <span class="t-s">"CreateSession"</span>: &#123; <span class="t-s">"path"</span>: <span class="t-s">"..."</span>, <span class="t-s">"config"</span>: &#123;&#125; &#125; &#125;
+  <span class="t-info">←</span> &#123; <span class="t-s">"Event"</span>: &#123; <span class="t-s">"Session"</span>: &#123;
+  <span class="t-s">"event"</span>: &#123; <span class="t-s">"Agent"</span>: &#123; <span class="t-s">"TextDelta"</span>: <span class="t-s">"..."</span> &#125; &#125; &#125; &#125;</code></pre>
+					</div>
+				</div>
+			</section>
+
+			<section class="features-section">
+				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> What you get</h2>
+				<div class="features">
+					<article>
+						<h3>Oneshot mode</h3>
+						<p>
+							Run one turn in-process. Loads <code>~/.yuke/providers.json</code>, <code>auth.json</code>,
+							and the optional <code>~/.yuke/init.lua</code> on startup. Resume a session with
+							<code>--resume</code>.
+						</p>
+					</article>
+					<article>
+						<h3>Daemon mode</h3>
+						<p>
+							Long-lived session on <code>ws://127.0.0.1:7878/ws</code>. Any client that can hold a
+							WebSocket open can connect.
+						</p>
+					</article>
+					<article>
+						<h3>JSON catalog</h3>
+						<p>
+							Model catalog is plain JSON in <code>providers.json</code>. Edit with any tool; the
+							daemon reloads it on the next session.
+						</p>
+					</article>
+					<article>
+						<h3>Lua for behavior</h3>
+						<p>
+							Session policy, tools, and hooks are Lua in <code>init.lua</code>. Async runtime,
+							sandboxed standard library, full IO primitives.
+						</p>
+					</article>
+					<article>
+						<h3>Async tools</h3>
+						<p>
+							Tool handlers run on an async runtime. File IO, HTTP, subprocesses: all non-blocking,
+							all available from Lua.
+						</p>
+					</article>
+					<article>
+						<h3>Hooks at every step</h3>
+						<p>
+							<code>before_tool</code>, <code>after_tool</code>, <code>turn_start</code>, <code>done</code>:
+							gate, rewrite, or audit the agent loop.
+						</p>
+					</article>
+					<article>
+						<h3>Open wire protocol</h3>
+						<p>
+							The daemon speaks a documented JSON-over-WebSocket protocol (<a
+								href="/yuke-website/asyncapi.json">asyncapi.json</a
+							>). Build your own client in any language.
+						</p>
+					</article>
+					<article>
+						<h3>Single binary</h3>
+						<p>
+							<code>cargo install yuke</code> drops one binary on your <code>PATH</code>. No
+							Electron, no background processes when not running.
+						</p>
+					</article>
+					<article>
+						<h3>MIT licensed</h3>
+						<p>
+							No telemetry, no accounts, no hosted service. Credentials live in <code>~/.yuke/auth.json</code>
+							(mode <code>0600</code>); the keys themselves stay in your shell.
+						</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="config-section">
+				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Three files, no DSL</h2>
+				<p class="section-lede">
+					The model catalog is JSON, edited with any tool and reloaded by the daemon on demand.
+					Credentials live in their own JSON file (mode <code>0600</code>), separate from the
+					catalog. Tools and hooks are Lua, optional, and run once per session.
+				</p>
+				<div class="config-split">
+					<div class="config-side">
+						<h3 class="config-filename">
+							<span class="filename-badge">providers.json</span>
+							<span class="config-where">~/.yuke/providers.json</span>
+						</h3>
+						<pre class="code-block"><code><span class="c-c">// The model catalog. Edit with any tool;</span>
+<span class="c-c">// reloaded on the next session.</span>
+&#123;
+  <span class="c-s">"providers"</span>: [
+    &#123;
+      <span class="c-s">"name"</span>: <span class="c-s">"openai"</span>,
+      <span class="c-s">"base_url"</span>: <span class="c-s">"https://api.openai.com/v1"</span>,
+      <span class="c-s">"models"</span>: [
+        &#123; <span class="c-s">"name"</span>: <span class="c-s">"gpt-4o"</span> &#125;,
+        &#123; <span class="c-s">"name"</span>: <span class="c-s">"o3"</span>, <span class="c-s">"protocol"</span>: <span class="c-s">"codex"</span> &#125;
+      ]
+    &#125;
+  ]
+&#125;</code></pre>
+					</div>
+					<div class="config-side">
+						<h3 class="config-filename">
+							<span class="filename-badge">init.lua</span>
+							<span class="config-where"
+								>~/.yuke/init.lua <span class="optional-tag">(optional)</span></span
+							>
+						</h3>
+						<pre class="code-block"><code><span class="c-c">-- Session policy, tools, hooks.</span>
+<span class="c-c">-- This file is optional.</span>
+<span class="c-k">yuke.tool</span> &#123;
+  name        = <span class="c-s">"read"</span>,
+  description = <span class="c-s">"Read a file with line numbers."</span>,
+  params      = &#123; path = <span class="c-s">"string"</span> &#125;,
+  handler     = <span class="c-k">function</span>(args)
+    <span class="c-k">return</span> yuke.fs.read(args.path)
+  <span class="c-k">end</span>,
+&#125;
+
+<span class="c-k">yuke.on</span>(<span class="c-s">"before_tool"</span>, <span class="c-k">function</span>(call)
+  <span class="c-k">if</span> call.name == <span class="c-s">"bash"</span>
+     <span class="c-k">and</span> call.arguments.command:find(<span class="c-s">"rm %-rf"</span>) <span class="c-k">then</span>
+    <span class="c-k">return</span> &#123; deny = <span class="c-s">"refusing"</span> &#125;
+  <span class="c-k">end</span>
+<span class="c-k">end</span>)</code></pre>
+					</div>
+				</div>
+				<p class="section-trailer">
+					<a href="/yuke-website/providers/">Provider catalog →</a> ·
+					<a href="/yuke-website/lua-config/">init.lua API →</a>
+				</p>
+			</section>
+
+			<section class="principles-section">
+				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Different by design</h2>
+				<div class="principles-grid">
+					<article>
+						<h3>Minimal</h3>
+						<p>
+							One binary, opt-in daemon, no background processes when idle. The runtime is small
+							enough to read in a weekend and small enough to keep in your head.
+						</p>
+					</article>
+					<article>
+						<h3>Yours to extend</h3>
+						<p>
+							Tools and hooks are Lua, in <code>~/.yuke/init.lua</code>. The model catalog is plain
+							JSON. The wire protocol is a documented <code>asyncapi.json</code>.
+						</p>
+					</article>
+					<article>
+						<h3>Yours to own</h3>
+						<p>
+							MIT licensed. No telemetry, no accounts, no hosted service. Credentials live in
+							<code>~/.yuke/auth.json</code> (mode <code>0600</code>); the keys themselves stay in your shell.
+						</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="bull-states">
+				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> The mascot has moods</h2>
+				<p class="section-lede">
+					The bull has states. Use them as loading hints, status indicators, or just decoration
+					in your own docs. PNGs are free to take.
+				</p>
+				<div class="states-grid">
+					<figure>
+						<img class="pixel" src="/yuke-website/bull/bull-idle.png" alt="idle" width="96" height="96" />
+						<figcaption>idle</figcaption>
+					</figure>
+					<figure>
+						<img class="pixel" src="/yuke-website/bull/bull-charge.png" alt="charge" width="96" height="96" />
+						<figcaption>charge</figcaption>
+					</figure>
+					<figure>
+						<img class="pixel" src="/yuke-website/bull/bull-sleep.png" alt="sleep" width="96" height="96" />
+						<figcaption>sleep</figcaption>
+					</figure>
+					<figure>
+						<img class="pixel" src="/yuke-website/bull/bull-demon.png" alt="demon" width="96" height="96" />
+						<figcaption>error</figcaption>
+					</figure>
+					<figure>
+						<img class="pixel" src="/yuke-website/bull/bull-skull.png" alt="skull" width="96" height="96" />
+						<figcaption>failed</figcaption>
+					</figure>
+				</div>
+				<p class="section-trailer">
+					Five of nine available. The full set lives in <a href="/yuke-website/bull/">/bull/</a>.
+				</p>
+			</section>
+
+			<section class="use-cases">
+				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> What people build with it</h2>
+				<div class="cases">
+					<article>
+						<h3>Daily-driver CLI</h3>
+						<p>
+							Replace a hosted coding agent with a local install. No telemetry, no vendor lock-in,
+							no Electron app.
+						</p>
+					</article>
+					<article>
+						<h3>Editor integration</h3>
+						<p>
+							Connect your editor to a daemon over WebSocket. Drive sessions from keybindings,
+							stream output in real time.
+						</p>
+					</article>
+					<article>
+						<h3>Custom frontends</h3>
+						<p>
+							Build a TUI in any stack (Elm, Ratatui, Bubble Tea, GPUI). The
+							<a href="/yuke-website/wire-protocol/">wire protocol</a> is documented and stable.
+						</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="final-cta">
+				<div class="split">
+					<div class="split-text">
+						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Try it.</h2>
+						<p class="section-lede">
+							Install yuke, drop a <code>providers.json</code> next to <code>init.lua</code>, set the
+							API key in your shell. One prompt in.
+						</p>
+						<div class="hero-actions">
+							<a class="cta" href="/yuke-website/getting-started/">Read the docs →</a>
+							<a class="cta cta-secondary" href="https://github.com/xyaman/yuke">Star on GitHub</a>
+						</div>
+					</div>
+					<div class="split-visual">
+						<pre class="install"><code>$ cargo install yuke
+$ mkdir -p ~/.yuke &amp;&amp; cat &gt; ~/.yuke/providers.json &lt;&lt;'EOF'
+&#123;
+"providers": [
+&#123;
+"name": "openai",
+"models": [ &#123; "name": "gpt-4o" &#125; ]
+&#125;
+]
+&#125;
+EOF
+$ cat &gt; ~/.yuke/auth.json &lt;&lt;'EOF'
+&#123; "providers": &#123; "openai": &#123; "type": "api_key_env", "env": "OPENAI_API_KEY" &#125; &#125; &#125;
+EOF
+$ export OPENAI_API_KEY=*** yuke -p "summarize src/"</code></pre>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<small>
+				<img class="footer-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="16" height="16" />
+				© xyaman · <a href="/yuke-website/getting-started/">Docs</a> ·
+				<a href="/yuke-website/wire-protocol/">Wire protocol</a> ·
+				<a href="https://github.com/xyaman/yuke">GitHub</a> ·
+				<a href="https://github.com/xyaman/yuke/blob/main/LICENSE">MIT</a>
+			</small>
+		</footer>
+	</body>
+</html>

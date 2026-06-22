@@ -1,0 +1,58 @@
+/* Custom Starlight theme overrides to match the hand-written landing page.
+   Landing colors: near-black bg + orange accent on dark, near-white bg + deeper
+   orange on light. Defined in public/landing.css; mirrored here for the docs. */
+
+/* Dark theme overrides */
+
+:root,
+:root[data-theme='dark'] {
+	--sl-color-accent-low: #3a1f10;
+	--sl-color-accent: #f97316;
+	--sl-color-accent-high: #fed7aa;
+	--sl-color-text-accent: #f97316;
+
+	--sl-color-white: #fafafa;
+	--sl-color-text: #e4e4e7;
+
+	--sl-color-bg: #0e0e10;
+	--sl-color-bg-nav: #0e0e10;
+	--sl-color-bg-sidebar: #0e0e10;
+	--sl-color-bg-inline-code: #18181b;
+
+	--sl-color-hairline: #27272a;
+	--sl-color-hairline-light: #27272a;
+	--sl-color-hairline-shade: #18181b;
+
+	--sl-color-backdrop-overlay: hsla(240, 9%, 5%, 0.66);
+}
+
+/* Light theme overrides */
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #fed7aa;
+	--sl-color-accent: #c2410c;
+	--sl-color-accent-high: #431407;
+	--sl-color-text-accent: #c2410c;
+
+	--sl-color-white: #fafafa;
+	--sl-color-text: #18181b;
+
+	--sl-color-bg: #fafafa;
+	--sl-color-bg-nav: #fafafa;
+	--sl-color-bg-sidebar: #fafafa;
+	--sl-color-bg-inline-code: #f4f4f5;
+
+	--sl-color-hairline: #e4e4e7;
+	--sl-color-hairline-light: #e4e4e7;
+	--sl-color-hairline-shade: #d4d4d8;
+
+	--sl-color-backdrop-overlay: hsla(0, 0%, 98%, 0.66);
+}
+
+/* Tighter mobile padding to match landing */
+
+@media (max-width: 32rem) {
+	.meta {
+		gap: 0.5rem;
+	}
+}
