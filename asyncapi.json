@@ -33,10 +33,24 @@
         "oneOf": [
           {
             "additionalProperties": false,
-            "description": "Incremental assistant text.",
+            "description": "Incremental assistant text, tagged with the id of the assistant message it builds so a client attaches it to the right slot.",
             "properties": {
               "TextDelta": {
-                "type": "string"
+                "properties": {
+                  "delta": {
+                    "description": "The text fragment.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Id of the assistant message being streamed.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "delta",
+                  "id"
+                ],
+                "type": "object"
               }
             },
             "required": [
@@ -46,10 +60,24 @@
           },
           {
             "additionalProperties": false,
-            "description": "Incremental assistant reasoning (\"thinking\").",
+            "description": "Incremental assistant reasoning (\"thinking\"), tagged with the assistant message id it builds (see [`AgentEvent::TextDelta`]).",
             "properties": {
               "ReasoningDelta": {
-                "type": "string"
+                "properties": {
+                  "delta": {
+                    "description": "The reasoning fragment.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Id of the assistant message being streamed.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "delta",
+                  "id"
+                ],
+                "type": "object"
               }
             },
             "required": [
@@ -59,10 +87,28 @@
           },
           {
             "additionalProperties": false,
-            "description": "Reasoning finished: the model stopped thinking and began answering (or calling tools). Carries the wall-clock interval it thought, so a frontend can show \"thought for Ns\" the moment thinking ends.",
+            "description": "Reasoning finished: the model stopped thinking and began answering (or calling tools). Carries the wall-clock interval it thought, so a frontend can show \"thought for Ns\" the moment thinking ends. Fires once per thinking block, so an interleaved turn (think, answer, think again) closes each block.",
             "properties": {
               "ReasoningDone": {
-                "$ref": "#/components/schemas/TimeSpan"
+                "properties": {
+                  "id": {
+                    "description": "Id of the assistant message being streamed.",
+                    "type": "string"
+                  },
+                  "span": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/TimeSpan"
+                      }
+                    ],
+                    "description": "The interval the model thought during this block."
+                  }
+                },
+                "required": [
+                  "id",
+                  "span"
+                ],
+                "type": "object"
               }
             },
             "required": [
@@ -370,6 +416,31 @@
               "RemoveWorkspace"
             ],
             "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Sets which sessions' high-volume content streams this connection receives, replacing any previous set. Each listed session's token and tool-call deltas are delivered; all others are dropped. Lifecycle events, permission requests, and errors for every session are delivered regardless (see [`DaemonEvent::focus_gated`]). A connection starts subscribed to nothing, so a client sends this when its view changes — typically the attached session, plus the one previewed in a picker.",
+            "properties": {
+              "Subscribe": {
+                "properties": {
+                  "sessions": {
+                    "description": "Sessions whose content streams to receive; empty receives none.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "sessions"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Subscribe"
+            ],
+            "type": "object"
           }
         ],
         "title": "ClientMessage"
@@ -588,11 +659,18 @@
                   "id": {
                     "description": "Session the event came from.",
                     "type": "string"
+                  },
+                  "seq": {
+                    "description": "This session's durable-message index at emit time, so a client can reconcile a [`ServerMessage::History`] snapshot against the live tail and detect loss on the broadcast bus. Stable across evict/rehydrate.",
+                    "format": "uint64",
+                    "minimum": 0.0,
+                    "type": "integer"
                   }
                 },
                 "required": [
                   "event",
-                  "id"
+                  "id",
+                  "seq"
                 ],
                 "type": "object"
               }
@@ -1173,6 +1251,10 @@
             ],
             "description": "Content for this message: plain text or multimodal parts."
           },
+          "id": {
+            "description": "Stable identity, minted at construction. Streaming deltas carry the id of the assistant message they build, so a client attaches them to the right slot.",
+            "type": "string"
+          },
           "meta": {
             "anyOf": [
               {
@@ -1213,6 +1295,7 @@
         },
         "required": [
           "content",
+          "id",
           "role"
         ],
         "type": "object"
@@ -1228,6 +1311,10 @@
               "integer",
               "null"
             ]
+          },
+          "interrupted": {
+            "description": "Whether a cancel cut this turn short. Set on a partial assistant turn committed mid-stream, and on a tool result synthesized for a call canceled before it finished, so an interrupted turn is recognizable from metadata rather than a synthetic marker message.",
+            "type": "boolean"
           },
           "model": {
             "description": "Model that produced this turn.",
@@ -1461,6 +1548,12 @@
                     },
                     "type": "array"
                   },
+                  "seq": {
+                    "description": "The durable-message watermark this snapshot reflects: the client applies live [`DaemonEvent::Session`] events at or beyond it and dedupes by id.",
+                    "format": "uint64",
+                    "minimum": 0.0,
+                    "type": "integer"
+                  },
                   "session": {
                     "description": "Session the backlog belongs to.",
                     "type": "string"
@@ -1468,6 +1561,7 @@
                 },
                 "required": [
                   "messages",
+                  "seq",
                   "session"
                 ],
                 "type": "object"

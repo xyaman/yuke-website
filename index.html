@@ -46,8 +46,8 @@ Full schema at <a href="/yuke-website/asyncapi.json">/asyncapi.json</a> ·
 <span class="t-comment"># Or wire-protocol level:</span>
   <span class="t-info">←</span> &#123; <span class="t-s">"Hello"</span>: &#123; <span class="t-s">"models"</span>: [...] &#125; &#125;
   <span class="t-info">→</span> &#123; <span class="t-s">"CreateSession"</span>: &#123; <span class="t-s">"path"</span>: <span class="t-s">"..."</span>, <span class="t-s">"config"</span>: &#123;&#125; &#125; &#125;
-  <span class="t-info">←</span> &#123; <span class="t-s">"Event"</span>: &#123; <span class="t-s">"Session"</span>: &#123;
-  <span class="t-s">"event"</span>: &#123; <span class="t-s">"Agent"</span>: &#123; <span class="t-s">"TextDelta"</span>: <span class="t-s">"..."</span> &#125; &#125; &#125; &#125;</code></pre> </div> </div> </section> <section class="features-section"> <h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28"> What you get</h2> <div class="features"> <article> <h3>Oneshot mode</h3> <p>
+  <span class="t-info">←</span> &#123; <span class="t-s">"Event"</span>: &#123; <span class="t-s">"event"</span>: &#123; <span class="t-s">"Session"</span>: &#123; <span class="t-s">"seq"</span>: <span class="t-n">1</span>,
+  <span class="t-s">"event"</span>: &#123; <span class="t-s">"Agent"</span>: &#123; <span class="t-s">"TextDelta"</span>: &#123; <span class="t-s">"id"</span>: <span class="t-s">"..."</span>, <span class="t-s">"delta"</span>: <span class="t-s">"..."</span> &#125; &#125; &#125; &#125; &#125; &#125;</code></pre> </div> </div> </section> <section class="features-section"> <h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28"> What you get</h2> <div class="features"> <article> <h3>Oneshot mode</h3> <p>
 Run one turn in-process. Loads <code>~/.yuke/providers.json</code>, <code>auth.json</code>,
 							and the optional <code>~/.yuke/init.lua</code> on startup. Resume a session with
 <code>--resume</code>.
@@ -67,6 +67,11 @@ Tool handlers run on an async runtime. File IO, HTTP, subprocesses: all non-bloc
 							gate, rewrite, or audit the agent loop.
 </p> </article> <article> <h3>Open wire protocol</h3> <p>
 The daemon speaks a documented JSON-over-WebSocket protocol (<a href="/yuke-website/asyncapi.json">asyncapi.json</a>). Build your own client in any language.
+</p> </article> <article> <h3>yuke-tui</h3> <p>
+An interactive terminal client that ships with yuke. Its UI is fully
+<a href="/yuke-website/tui/">Lua-scriptable</a>: rebind keys, swap layouts, register
+							custom commands, paint your own widgets — all from
+<code>~/.yuke/tui/init.lua</code>.
 </p> </article> <article> <h3>Single binary</h3> <p> <code>cargo install yuke</code> drops one binary on your <code>PATH</code>. No
 							Electron, no background processes when not running.
 </p> </article> <article> <h3>MIT licensed</h3> <p>
@@ -110,8 +115,9 @@ The model catalog is JSON, edited with any tool and reloaded by the daemon on de
 One binary, opt-in daemon, no background processes when idle. The runtime is small
 							enough to read in a weekend and small enough to keep in your head.
 </p> </article> <article> <h3>Yours to extend</h3> <p>
-Tools and hooks are Lua, in <code>~/.yuke/init.lua</code>. The model catalog is plain
-							JSON. The wire protocol is a documented <code>asyncapi.json</code>.
+Tools and hooks are Lua, in <code>~/.yuke/init.lua</code>. The TUI's UI is Lua too,
+							in <code>~/.yuke/tui/init.lua</code>. The model catalog is plain JSON. The wire
+							protocol is a documented <code>asyncapi.json</code>.
 </p> </article> <article> <h3>Yours to own</h3> <p>
 MIT licensed. No telemetry, no accounts, no hosted service. Credentials live in
 <code>~/.yuke/auth.json</code> (mode <code>0600</code>); the keys themselves stay in your shell.
@@ -126,8 +132,8 @@ Replace a hosted coding agent with a local install. No telemetry, no vendor lock
 </p> </article> <article> <h3>Editor integration</h3> <p>
 Connect your editor to a daemon over WebSocket. Drive sessions from keybindings,
 							stream output in real time.
-</p> </article> <article> <h3>Custom frontends</h3> <p>
-Build a TUI in any stack (Elm, Ratatui, Bubble Tea, GPUI). The
+</p> </article> <article> <h3>Custom frontends</h3> <p> <a href="/yuke-website/tui/">yuke-tui</a> is the bundled reference client; build
+							your own in any stack (Elm, Ratatui, Bubble Tea, GPUI). The
 <a href="/yuke-website/wire-protocol/">wire protocol</a> is documented and stable.
 </p> </article> </div> </section> <section class="final-cta"> <div class="split"> <div class="split-text"> <h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28"> Try it.</h2> <p class="section-lede">
 Install yuke, drop a <code>providers.json</code> next to <code>init.lua</code>, set the

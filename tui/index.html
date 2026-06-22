@@ -1,0 +1,859 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-bguv2lll"> <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>yuke-tui | yuke</title><link rel="canonical" href="https://xyaman.github.io/yuke-website/tui/"/><link rel="sitemap" href="/yuke-website/sitemap-index.xml"/><link rel="shortcut icon" href="/yuke-website/favicon.ico" type="image/x-icon"/><meta name="generator" content="Astro v6.4.8"/><meta name="generator" content="Starlight v0.40.0"/><meta property="og:title" content="yuke-tui"/><meta property="og:type" content="article"/><meta property="og:url" content="https://xyaman.github.io/yuke-website/tui/"/><meta property="og:locale" content="en"/><meta property="og:description" content="The interactive terminal client for the yuke daemon, and the yuke.tui.* Lua API."/><meta property="og:site_name" content="yuke"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="The interactive terminal client for the yuke daemon, and the yuke.tui.* Lua API."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/yuke-website/_astro/print.DNXP8c50.css" media="print"><link rel="stylesheet" href="/yuke-website/_astro/common.D344_gmF.css"><script type="module" src="/yuke-website/_astro/page.B_tncCx8.js"></script></head> <body class="astro-bguv2lll"> <a href="#_top" class="astro-7q3lir66">Skip to content</a> <div class="page sl-flex astro-vrdttmbt"> <header class="header astro-vrdttmbt"><div class="header astro-kmkmnagf"> <div class="title-wrapper sl-flex astro-kmkmnagf"> <a href="/yuke-website/" class="site-title sl-flex astro-m46x6ez3">  <img class="astro-m46x6ez3" alt src="/yuke-website/_astro/logo.CcGcEK3G.png" width="256" height="256">  <span class="astro-m46x6ez3" translate="no"> yuke </span> </a> </div> <div class="sl-flex print:hidden astro-kmkmnagf"> <site-search class="astro-kmkmnagf astro-v37mnknz" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"> <button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-v37mnknz"> <svg aria-hidden="true" class="astro-v37mnknz astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg> <span class="sl-hidden md:sl-block astro-v37mnknz" aria-hidden="true">Search</span> <kbd class="sl-hidden md:sl-flex astro-v37mnknz" style="display: none;"> <kbd class="astro-v37mnknz">Ctrl</kbd><kbd class="astro-v37mnknz">K</kbd> </kbd> </button> <dialog style="padding:0" aria-label="Search" class="astro-v37mnknz"> <div class="dialog-frame sl-flex astro-v37mnknz">  <button data-close-modal class="sl-flex md:sl-hidden astro-v37mnknz"> Cancel </button> <div class="search-container astro-v37mnknz"> <div id="starlight__search" class="astro-v37mnknz"></div> </div> </div> </dialog> </site-search>  <script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script> <script type="module" src="/yuke-website/_astro/Search.astro_astro_type_script_index_0_lang.D-zRX7sh.js"></script>  </div> <div class="sl-hidden md:sl-flex print:hidden right-group astro-kmkmnagf"> <div class="sl-flex social-icons astro-kmkmnagf"> <a href="https://github.com/xyaman/yuke" rel="me" class="sl-flex astro-wy4te6ga"><span class="sr-only astro-wy4te6ga">GitHub</span><svg aria-hidden="true" class="astro-wy4te6ga astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-4yphtoen"> <span class="sr-only astro-4yphtoen">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-4yphtoen astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-4yphtoen"> <option value="dark" class="astro-4yphtoen">Dark</option><option value="light" class="astro-4yphtoen">Light</option><option value="auto" selected class="astro-4yphtoen">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-4yphtoen astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script> <script type="module">const r="starlight-theme",o=e=>e==="auto"||e==="dark"||e==="light"?e:"auto",c=()=>o(typeof localStorage<"u"&&localStorage.getItem(r));function n(e){typeof localStorage<"u"&&localStorage.setItem(r,e==="light"||e==="dark"?e:"")}const l=()=>matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";function t(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e==="auto"?l():e,n(e)}matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{c()==="auto"&&t("auto")});class s extends HTMLElement{constructor(){super(),t(c()),this.querySelector("select")?.addEventListener("change",a=>{a.currentTarget instanceof HTMLSelectElement&&t(o(a.currentTarget.value))})}}customElements.define("starlight-theme-select",s);</script> <script type="module">class s extends HTMLElement{constructor(){super();const e=this.querySelector("select");e&&(e.addEventListener("change",t=>{t.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=t.currentTarget.value)}),window.addEventListener("pageshow",t=>{if(!t.persisted)return;const n=e.querySelector("option[selected]")?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}}customElements.define("starlight-lang-select",s);</script> </div> </div></header> <nav class="sidebar print:hidden astro-vrdttmbt" aria-label="Main"> <starlight-menu-button class="print:hidden astro-jif73yzw"> <button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-jif73yzw"> <svg aria-hidden="true" class="open-menu astro-jif73yzw astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg> <svg aria-hidden="true" class="close-menu astro-jif73yzw astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg> </button> </starlight-menu-button> <script type="module">class s extends HTMLElement{constructor(){super(),this.btn=this.querySelector("button"),this.btn.addEventListener("click",()=>this.toggleExpanded());const t=this.closest("nav");t&&t.addEventListener("keyup",e=>this.closeOnEscape(e))}setExpanded(t){this.setAttribute("aria-expanded",String(t)),document.body.toggleAttribute("data-mobile-menu-expanded",t)}toggleExpanded(){this.setExpanded(this.getAttribute("aria-expanded")!=="true")}closeOnEscape(t){t.code==="Escape"&&(this.setExpanded(!1),this.btn.focus())}}customElements.define("starlight-menu-button",s);</script>  <div id="starlight__sidebar" class="sidebar-pane astro-vrdttmbt"> <div class="sidebar-content sl-flex astro-vrdttmbt"> <sl-sidebar-state-persist data-hash="1vwlkru" class="astro-kku4brbg"> <script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script>  <ul class="top-level astro-3ii7xxms"> <li class="astro-3ii7xxms"> <details open class="astro-3ii7xxms"> <summary class="astro-3ii7xxms"> <span class="group-label astro-3ii7xxms"> <span class="large astro-3ii7xxms">Start</span>  </span> <svg aria-hidden="true" class="caret astro-3ii7xxms astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="0"></sl-sidebar-restore> <ul class="astro-3ii7xxms"> <li class="astro-3ii7xxms"> <a href="/yuke-website/getting-started/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Getting started</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/providers/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Provider catalog</span>  </a> </li> </ul> </details> </li><li class="astro-3ii7xxms"> <details open class="astro-3ii7xxms"> <summary class="astro-3ii7xxms"> <span class="group-label astro-3ii7xxms"> <span class="large astro-3ii7xxms">Guides</span>  </span> <svg aria-hidden="true" class="caret astro-3ii7xxms astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="1"></sl-sidebar-restore> <ul class="astro-3ii7xxms"> <li class="astro-3ii7xxms"> <a href="/yuke-website/local-mode/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Local mode</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/daemon-mode/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Daemon mode</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/tui/" aria-current="page" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">yuke-tui</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/lua-config/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">init.lua</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/tools/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Writing tools</span>  </a> </li> </ul> </details> </li><li class="astro-3ii7xxms"> <details open class="astro-3ii7xxms"> <summary class="astro-3ii7xxms"> <span class="group-label astro-3ii7xxms"> <span class="large astro-3ii7xxms">Reference</span>  </span> <svg aria-hidden="true" class="caret astro-3ii7xxms astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="2"></sl-sidebar-restore> <ul class="astro-3ii7xxms"> <li class="astro-3ii7xxms"> <a href="/yuke-website/cli/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">CLI options</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/primitives/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Lua primitives</span>  </a> </li><li class="astro-3ii7xxms"> <a href="/yuke-website/wire-protocol/" class="astro-3ii7xxms"> <span class="astro-3ii7xxms">Wire protocol</span>  </a> </li> </ul> </details> </li> </ul>  <script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script> </sl-sidebar-state-persist> <div class="md:sl-hidden"> <div class="mobile-preferences sl-flex astro-wu23bvmt"> <div class="social-icons astro-wu23bvmt"> <a href="https://github.com/xyaman/yuke" rel="me" class="sl-flex astro-wy4te6ga"><span class="sr-only astro-wy4te6ga">GitHub</span><svg aria-hidden="true" class="astro-wy4te6ga astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-4yphtoen"> <span class="sr-only astro-4yphtoen">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-4yphtoen astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-4yphtoen"> <option value="dark" class="astro-4yphtoen">Dark</option><option value="light" class="astro-4yphtoen">Light</option><option value="auto" selected class="astro-4yphtoen">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-4yphtoen astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script>   </div> </div> </div> </div> </nav> <div class="main-frame astro-vrdttmbt">  <script type="module">const a=document.getElementById("starlight__sidebar"),n=a?.querySelector("sl-sidebar-state-persist"),o="sl-sidebar-state",i=()=>{let t=[];const e=n?.dataset.hash||"";try{const s=sessionStorage.getItem(o),r=JSON.parse(s||"{}");Array.isArray(r.open)&&r.hash===e&&(t=r.open)}catch{}return{hash:e,open:t,scroll:a?.scrollTop||0}},c=t=>{try{sessionStorage.setItem(o,JSON.stringify(t))}catch{}},d=()=>c(i()),l=(t,e)=>{const s=i();s.open[e]=t,c(s)};n?.addEventListener("click",t=>{if(!(t.target instanceof Element))return;const e=t.target.closest("summary")?.closest("details");if(!e)return;const s=e.querySelector("sl-sidebar-restore"),r=parseInt(s?.dataset.index||"");isNaN(r)||l(!e.open,r)});addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&d()});addEventListener("pageHide",d);</script> <div class="lg:sl-flex astro-67yu43on"> <aside class="right-sidebar-container print:hidden astro-67yu43on"> <div class="right-sidebar astro-67yu43on"> <div class="lg:sl-hidden astro-pb3aqygn"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-doynk5tl"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-doynk5tl"><details id="starlight__mobile-toc" class="astro-doynk5tl"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-doynk5tl"><span class="toggle sl-flex astro-doynk5tl">On this page<svg aria-hidden="true" class="caret astro-doynk5tl astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-doynk5tl"></span></summary><div class="dropdown astro-doynk5tl"><ul class="isMobile astro-gnoq344e" style="--depth: 0;"> <li class="astro-gnoq344e" style="--depth: 0;"> <a href="#_top" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#two-different-yukes" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Two different yukes</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#the-model-state-in-actions-out" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">The model: state in, actions out</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#layers-and-boot" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Layers and boot</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuiopts" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.opts</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#the-ctx-state-table" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">The ctx state table</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuiactions" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.actions</span> </a> <ul class="isMobile astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#conversation" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Conversation</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#composer-local-edits" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Composer (local edits)</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#view--navigation" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">View / navigation</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#stub-verbs-load-without-error" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Stub verbs (load without error)</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuikeymap" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.keymap</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuilayout" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.layout</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuipaint" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.paint</span> </a> <ul class="isMobile astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#slice-methods" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Slice methods</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#handle" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Handle</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuitheme" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.theme</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuion" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.on</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuicmd" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.cmd</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuipicker" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.picker</span> </a> <ul class="isMobile astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#layouts" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Layouts</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuioverlay" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.overlay</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuinotify-and-small-helpers" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.notify and small helpers</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#worked-example-a-minimal-user-overlay" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Worked example: a minimal user overlay</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#running-it" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Running it</span> </a>  </li> </ul></div></details></nav></mobile-starlight-toc><script type="module" src="/yuke-website/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-pb3aqygn"><div class="sl-container astro-pb3aqygn"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-gnoq344e" style="--depth: 0;"> <li class="astro-gnoq344e" style="--depth: 0;"> <a href="#_top" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#two-different-yukes" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Two different yukes</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#the-model-state-in-actions-out" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">The model: state in, actions out</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#layers-and-boot" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Layers and boot</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuiopts" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.opts</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#the-ctx-state-table" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">The ctx state table</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuiactions" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.actions</span> </a> <ul class="astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#conversation" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Conversation</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#composer-local-edits" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Composer (local edits)</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#view--navigation" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">View / navigation</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#stub-verbs-load-without-error" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Stub verbs (load without error)</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuikeymap" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.keymap</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuilayout" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.layout</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuipaint" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.paint</span> </a> <ul class="astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#slice-methods" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Slice methods</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 1;"> <a href="#handle" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Handle</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuitheme" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.theme</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuion" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.on</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuicmd" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.cmd</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuipicker" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.picker</span> </a> <ul class="astro-gnoq344e" style="--depth: 1;"> <li class="astro-gnoq344e" style="--depth: 1;"> <a href="#layouts" class="astro-gnoq344e" style="--depth: 1;"> <span class="astro-gnoq344e" style="--depth: 1;">Layouts</span> </a>  </li> </ul> </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuioverlay" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.overlay</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#yuketuinotify-and-small-helpers" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">yuke.tui.notify and small helpers</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#worked-example-a-minimal-user-overlay" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Worked example: a minimal user overlay</span> </a>  </li><li class="astro-gnoq344e" style="--depth: 0;"> <a href="#running-it" class="astro-gnoq344e" style="--depth: 0;"> <span class="astro-gnoq344e" style="--depth: 0;">Running it</span> </a>  </li> </ul></nav></starlight-toc><script type="module" src="/yuke-website/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"></script></div></div> </div> </aside> <div class="main-pane astro-67yu43on">  <main data-pagefind-body class="astro-bguv2lll" lang="en" dir="ltr">    <div class="content-panel astro-7nkwcw3z"> <div class="sl-container astro-7nkwcw3z"> <h1 id="_top" class="astro-j6tvhyss">yuke-tui</h1> </div> </div> <div class="content-panel astro-7nkwcw3z"> <div class="sl-container astro-7nkwcw3z"> <div class="sl-markdown-content"> <p><code dir="auto">yuke-tui</code> is an interactive terminal client for the yuke daemon. The Rust core
+owns state and the cell grid; Lua owns the view (what each region paints), the
+bindings (which keys invoke which actions), the theme, and client-side
+commands. The whole UI is <code dir="auto">~/.yuke/tui/init.lua</code>-scriptable: rebind keys,
+add sidebars, replace the statusline, register a custom command palette —
+without rebuilding the binary.</p>
+<p>This page is the API reference for the <code dir="auto">yuke.tui.*</code> surface.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="two-different-yukes">Two different <code dir="auto">yuke</code>s</h2><a class="sl-anchor-link" href="#two-different-yukes"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Two different yukes”</span></a></div>
+<p><code dir="auto">yuke-tui</code> and the daemon’s <code dir="auto">init.lua</code> are different processes, different VMs,
+and different files. They share none of the same surface.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Surface</th><th>Where it runs</th><th>File</th><th>What it does</th></tr></thead><tbody><tr><td><code dir="auto">yuke.*</code> (daemon)</td><td>inside the engine</td><td><code dir="auto">~/.yuke/init.lua</code></td><td>tools, hooks, <code dir="auto">yuke.opts</code>, <code dir="auto">fs</code>/<code dir="auto">exec</code>/<code dir="auto">http</code>, <code dir="auto">yuke.cmd</code></td></tr><tr><td><code dir="auto">yuke.tui.*</code> (this)</td><td>inside the TUI client</td><td><code dir="auto">~/.yuke/tui/init.lua</code></td><td>layout, paint, keymap, theme, events, client commands</td></tr></tbody></table>
+<p>The TUI VM has <strong>no</strong> <code dir="auto">fs</code> / <code dir="auto">exec</code> / <code dir="auto">http</code> / <code dir="auto">tool</code> and no agent hooks; it is
+a view layer. The two share only the <code dir="auto">mlua</code> dependency.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="the-model-state-in-actions-out">The model: state in, actions out</h2><a class="sl-anchor-link" href="#the-model-state-in-actions-out"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “The model: state in, actions out”</span></a></div>
+<p>Every paint callback, hook, and command handler receives a read-only <strong><code dir="auto">ctx</code></strong>
+describing current state. The only way to change anything (send a turn, scroll,
+switch model, edit the composer, answer a prompt) is to call a
+<strong><code dir="auto">yuke.tui.actions.*</code></strong> verb. Paint callbacks must be pure: read <code dir="auto">ctx</code>, write
+cells, no side effects.</p>
+<div class="expressive-code"><link rel="stylesheet" href="/yuke-website/_astro/ec.v4551.css"><script type="module" src="/yuke-website/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F">-- read state from ctx; mutate state through actions</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.keymap.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">insert</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">&#x3C;CR></span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">if</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.input.text </span><span style="--0:#7FDBCA;--1:#096E72">~=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"" </span><span style="--0:#C792EA;--1:#8844AE">then</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">send</span><span style="--0:#D6DEEB;--1:#403F53">()      </span><span style="--0:#919F9F;--1:#5F636F">-- sends the composer as a user turn</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">end</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="-- read state from ctx; mutate state through actionsyuke.tui.keymap.set(&#x22;insert&#x22;, &#x22;<CR>&#x22;, function(ctx)  if ctx.input.text ~= &#x22;&#x22; then    yuke.tui.actions.send()      -- sends the composer as a user turn  endend)"><div></div></button></div></figure></div>
+<p>A buggy config can therefore garble the <em>view</em> but can never corrupt a turn or
+desync the protocol: every state change goes through <code dir="auto">yuke.tui.actions.*</code>.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="layers-and-boot">Layers and boot</h2><a class="sl-anchor-link" href="#layers-and-boot"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Layers and boot”</span></a></div>
+<p>The TUI’s Lua config is built from two layers, run in one VM in order:</p>
+<ol>
+<li><strong>Bundled default</strong> — embedded in the binary, sets the theme, the root
+layout (statusline / transcript / composer), the standard keymaps, and the
+built-in commands. Ships so the TUI is fully usable with no user config.</li>
+<li><strong>User overlay</strong> — <code dir="auto">~/.yuke/tui/init.lua</code> (optional), runs after the default
+and can extend it (add a sidebar, rebind keys, register commands) or
+replace it wholesale (<code dir="auto">yuke.tui.set_root(...)</code> with a fresh tree).</li>
+</ol>
+<p>The bundled default boots in <code dir="auto">insert</code> mode with emacs / readline editing
+keys. Setting <code dir="auto">opts.vim = true</code> loads the bundled <code dir="auto">runtime/vim.lua</code>, which
+adds a <code dir="auto">normal</code> mode reachable with <code dir="auto">&#x3C;Esc></code>, with vim motions, operators, and
+edits on the composer. Either way, every binding is plain <code dir="auto">keymap.set</code>, so vim
+is just the bundled default, not a hardcoded mode.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuiopts">yuke.tui.opts</h2><a class="sl-anchor-link" href="#yuketuiopts"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.opts”</span></a></div>
+<p>Client-level options. Call once at the top of <code dir="auto">init.lua</code>; the bundled default
+sets values first, so a user file only overrides what it cares about.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">opts</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">daemon</span><span style="--0:#D6DEEB;--1:#403F53">          </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">127.0.0.1:7878</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">vim</span><span style="--0:#D6DEEB;--1:#403F53">             </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">false</span><span style="--0:#D6DEEB;--1:#403F53">,                      </span><span style="--0:#919F9F;--1:#5F636F">-- modal composer + vim motions</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">start_mode</span><span style="--0:#D6DEEB;--1:#403F53">      </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">insert</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">working_label</span><span style="--0:#D6DEEB;--1:#403F53">   </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">working…</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">working_frames</span><span style="--0:#D6DEEB;--1:#403F53">  </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠋</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠙</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠹</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠸</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠼</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠴</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠦</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠧</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠇</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">⠏</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.opts {  daemon          = &#x22;127.0.0.1:7878&#x22;,  vim             = false,                      -- modal composer + vim motions  start_mode      = &#x22;insert&#x22;,  working_label   = &#x22;working…&#x22;,  working_frames  = { &#x22;⠋&#x22;, &#x22;⠙&#x22;, &#x22;⠹&#x22;, &#x22;⠸&#x22;, &#x22;⠼&#x22;, &#x22;⠴&#x22;, &#x22;⠦&#x22;, &#x22;⠧&#x22;, &#x22;⠇&#x22;, &#x22;⠏&#x22; },}"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">daemon</code></td><td>string</td><td><code dir="auto">"127.0.0.1:7878"</code></td><td><code dir="auto">host:port</code> or a full <code dir="auto">ws://</code> / <code dir="auto">wss://</code> URL. A CLI positional argument overrides this.</td></tr><tr><td><code dir="auto">vim</code></td><td>bool</td><td><code dir="auto">false</code></td><td>when <code dir="auto">true</code>, loads the bundled vim bindings (<code dir="auto">runtime/vim.lua</code>); the composer is modal with vim motions and edits</td></tr><tr><td><code dir="auto">start_mode</code></td><td>string</td><td><code dir="auto">"insert"</code></td><td>the key mode the app boots in</td></tr><tr><td><code dir="auto">working_label</code></td><td>string</td><td><code dir="auto">"working…"</code></td><td>label of the built-in <code dir="auto">working</code> leaf</td></tr><tr><td><code dir="auto">working_frames</code></td><td>string[]</td><td>the Braille dots</td><td>the spinner frames the <code dir="auto">working</code> leaf cycles over time</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="the-ctx-state-table">The <code dir="auto">ctx</code> state table</h2><a class="sl-anchor-link" href="#the-ctx-state-table"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “The ctx state table”</span></a></div>
+<p>Handed to every paint callback, hook, keymap, and command handler.
+<strong>Read-only.</strong> Read it, but mutate state only through <code dir="auto">yuke.tui.actions.*</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">ctx.connected</code></td><td>bool</td><td>daemon socket up</td></tr><tr><td><code dir="auto">ctx.mode</code></td><td>string</td><td>active key mode (<code dir="auto">"insert"</code>, <code dir="auto">"normal"</code>, …)</td></tr><tr><td><code dir="auto">ctx.size</code></td><td>table</td><td>screen dimensions <code dir="auto">{ width, height }</code></td></tr><tr><td><code dir="auto">ctx.input</code></td><td>table</td><td>composer: <code dir="auto">{ text = &#x3C;string> }</code></td></tr><tr><td><code dir="auto">ctx.turn</code></td><td>table</td><td><code dir="auto">{ active, queued, elapsed_ms, tokens, spinner, thinking }</code>: whether a turn is in flight, queued user messages behind it, milliseconds elapsed, token count, the spinner frame counter, and whether the model is in a reasoning (“thinking”) block</td></tr><tr><td><code dir="auto">ctx.session</code></td><td>table?</td><td>focused session: <code dir="auto">{ id, model, reasoning, permission, title }</code>; <code dir="auto">nil</code> before attach</td></tr><tr><td><code dir="auto">ctx.sessions</code></td><td><code dir="auto">Session[]</code></td><td>every live session, for a Lua <code dir="auto">picker(spec)</code> source</td></tr><tr><td><code dir="auto">ctx.models</code></td><td><code dir="auto">Model[]</code></td><td>advertised catalog, for a Lua <code dir="auto">picker(spec)</code> source: <code dir="auto">{ name, protocol, reasoning_levels, default_reasoning }</code></td></tr><tr><td><code dir="auto">ctx.commands</code></td><td><code dir="auto">Command[]</code></td><td>every registered client command, for a command-palette picker: <code dir="auto">{ name, desc }</code></td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuiactions">yuke.tui.actions</h2><a class="sl-anchor-link" href="#yuketuiactions"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.actions”</span></a></div>
+<p>The verbs. Every state change goes through one of these. They are safe to call
+from keymaps, commands, and hooks; they update local UI state and / or send a
+<code dir="auto">ClientMessage</code> / <code dir="auto">EngineCommand</code> to the daemon.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="conversation">Conversation</h3><a class="sl-anchor-link" href="#conversation"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Conversation”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Action</th><th>Maps to</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">actions.send()</code></td><td><code dir="auto">EngineCommand::UserMessage</code></td><td>sends the composer as a user turn; queues if a turn is in flight</td></tr><tr><td><code dir="auto">actions.cancel()</code></td><td><code dir="auto">EngineCommand::Cancel</code></td><td>interrupt the in-flight turn</td></tr><tr><td><code dir="auto">actions.set_model(name)</code></td><td>model switch on next <code dir="auto">UserMessage</code></td><td>sticky; errors surface as a <code dir="auto">turn_error</code> event</td></tr><tr><td><code dir="auto">actions.set_reasoning(level)</code></td><td>reasoning switch</td><td>must be offered by the active model</td></tr><tr><td><code dir="auto">actions.set_permission_mode(mode)</code></td><td><code dir="auto">EngineCommand::SetPermissionMode</code></td><td><code dir="auto">"strict"</code> | <code dir="auto">"normal"</code> | <code dir="auto">"yolo"</code>; an unknown mode surfaces a notice</td></tr><tr><td><code dir="auto">actions.notify(message)</code></td><td>transient footer notice</td><td>the same as <code dir="auto">yuke.tui.notify</code></td></tr><tr><td><code dir="auto">actions.attach(id)</code></td><td>focus a session by id</td><td>fetch <code dir="auto">History</code>, start reconciling its firehose</td></tr><tr><td><code dir="auto">actions.new_session()</code></td><td><code dir="auto">CreateSession</code></td><td>a session in the launch workspace</td></tr><tr><td><code dir="auto">actions.run_command(name)</code></td><td>run a registered client command</td><td>invokes the command registered via <code dir="auto">yuke.tui.cmd.register</code></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="composer-local-edits">Composer (local edits)</h3><a class="sl-anchor-link" href="#composer-local-edits"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Composer (local edits)”</span></a></div>
+<p>The composer’s cursor and buffer are local UI state — no daemon round-trip.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Action</th><th>Effect</th></tr></thead><tbody><tr><td><code dir="auto">actions.composer.newline()</code></td><td>insert a literal newline (the composer is multiline)</td></tr><tr><td><code dir="auto">actions.composer.move(where)</code></td><td><code dir="auto">"left"</code> | <code dir="auto">"right"</code> | <code dir="auto">"word_left"</code> | <code dir="auto">"word_right"</code> | <code dir="auto">"home"</code> | <code dir="auto">"end"</code> | <code dir="auto">"up"</code> | <code dir="auto">"down"</code> (readline-style)</td></tr><tr><td><code dir="auto">actions.composer.delete(kind)</code></td><td><code dir="auto">"char_back"</code> | <code dir="auto">"char"</code> | <code dir="auto">"word_back"</code> | <code dir="auto">"word"</code> | <code dir="auto">"line"</code> | <code dir="auto">"to_end"</code> | <code dir="auto">"to_start"</code> (readline-style)</td></tr><tr><td><code dir="auto">actions.composer.motion(m)</code></td><td>vim motion: <code dir="auto">"h"</code> | <code dir="auto">"l"</code> | <code dir="auto">"j"</code> | <code dir="auto">"k"</code> | <code dir="auto">"0"</code> | <code dir="auto">"^"</code> | <code dir="auto">"$"</code> | <code dir="auto">"w"</code> | <code dir="auto">"W"</code> | <code dir="auto">"b"</code> | <code dir="auto">"B"</code> | <code dir="auto">"e"</code> | <code dir="auto">"E"</code> | <code dir="auto">"gg"</code> | <code dir="auto">"G"</code> (the modal editor’s cursor, only used under <code dir="auto">opts.vim = true</code>)</td></tr><tr><td><code dir="auto">actions.composer.op(operator, motion)</code></td><td>vim operator over a motion: <code dir="auto">operator</code> in <code dir="auto">"d"</code> | <code dir="auto">"c"</code> | <code dir="auto">"y"</code>, e.g. <code dir="auto">op("d", "w")</code>; doubled (<code dir="auto">"dd"</code>, <code dir="auto">"cc"</code>, <code dir="auto">"yy"</code>) operates on the line</td></tr><tr><td><code dir="auto">actions.composer.edit(e)</code></td><td>one-key vim edits: <code dir="auto">"x"</code> | <code dir="auto">"X"</code> | <code dir="auto">"D"</code> | <code dir="auto">"p"</code> | <code dir="auto">"P"</code> | <code dir="auto">"u"</code>, plus the insert-entry keys <code dir="auto">"a"</code> | <code dir="auto">"A"</code> | <code dir="auto">"I"</code> | <code dir="auto">"o"</code> | <code dir="auto">"O"</code> | <code dir="auto">"C"</code> (which enter insert)</td></tr><tr><td><code dir="auto">actions.composer.history(dir)</code></td><td>recall submitted inputs: <code dir="auto">"prev"</code> | <code dir="auto">"next"</code></td></tr></tbody></table>
+<p>The motion / op / edit verbs exist so a custom <code dir="auto">normal</code>-mode keymap can drive
+the built-in modal editor; the bundled vim bindings are just these wired to the
+usual keys. They are no-ops when <code dir="auto">opts.vim = false</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="view--navigation">View / navigation</h3><a class="sl-anchor-link" href="#view--navigation"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “View / navigation”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Action</th><th>Effect</th></tr></thead><tbody><tr><td><code dir="auto">actions.scroll(delta)</code></td><td>scroll the transcript by <code dir="auto">delta</code> rows (negative = up)</td></tr><tr><td><code dir="auto">actions.scroll_to(where)</code></td><td><code dir="auto">"top"</code> | <code dir="auto">"bottom"</code></td></tr><tr><td><code dir="auto">actions.mode(name)</code></td><td>switch key mode</td></tr><tr><td><code dir="auto">actions.picker(kind)</code></td><td>open a built-in picker: <code dir="auto">"model"</code> | <code dir="auto">"reasoning"</code> | <code dir="auto">"session"</code> | <code dir="auto">"command"</code></td></tr><tr><td><code dir="auto">actions.back()</code></td><td>return to the dashboard / session picker</td></tr><tr><td><code dir="auto">actions.redraw()</code></td><td>request a repaint (a no-op; a redraw follows every event)</td></tr><tr><td><code dir="auto">actions.quit()</code></td><td>tear down and exit</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="stub-verbs-load-without-error">Stub verbs (load without error)</h3><a class="sl-anchor-link" href="#stub-verbs-load-without-error"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Stub verbs (load without error)”</span></a></div>
+<p>The bundled default and common configs reference a few verbs that the current
+build accepts as no-ops so configs load without error. They are reserved for
+upcoming increments:</p>
+<p><code dir="auto">eval</code>, <code dir="auto">open_workspace</code>, <code dir="auto">remove_session</code>, <code dir="auto">remove_workspace</code>, <code dir="auto">permit</code>,
+<code dir="auto">focus</code>, <code dir="auto">run_daemon_command</code>.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuikeymap">yuke.tui.keymap</h2><a class="sl-anchor-link" href="#yuketuikeymap"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.keymap”</span></a></div>
+<p>nvim-style chord bindings, dispatched per key mode. A bound key in a mode
+shadows that mode’s default text handling; an unbound printable key in
+<code dir="auto">"insert"</code> mode falls through to the composer.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.keymap.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">insert</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">&#x3C;CR></span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,  </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">if</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.input.text </span><span style="--0:#7FDBCA;--1:#096E72">~=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"" </span><span style="--0:#C792EA;--1:#8844AE">then</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">send</span><span style="--0:#D6DEEB;--1:#403F53">() </span><span style="--0:#C792EA;--1:#8844AE">end</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.keymap.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">*</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,      </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">&#x3C;C-q></span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">()</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">quit</span><span style="--0:#D6DEEB;--1:#403F53">() </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)   </span><span style="--0:#919F9F;--1:#5F636F">-- "*" = all modes</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.keymap.set(&#x22;insert&#x22;, &#x22;<CR>&#x22;,  function(ctx)  if ctx.input.text ~= &#x22;&#x22; then yuke.tui.actions.send() endend)yuke.tui.keymap.set(&#x22;*&#x22;,      &#x22;<C-q>&#x22;, function() yuke.tui.actions.quit() end)   -- &#x22;*&#x22; = all modes"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Function</th><th>Signature</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">keymap.set(mode, lhs, rhs, opts?)</code></td><td><code dir="auto">mode: string, lhs: string, rhs: function, opts?: table</code></td><td><code dir="auto">rhs</code> receives <code dir="auto">ctx</code></td></tr><tr><td><code dir="auto">keymap.del(mode, lhs)</code></td><td></td><td>remove a binding</td></tr><tr><td><code dir="auto">keymap.list(...)</code></td><td></td><td>stub (returns an empty table)</td></tr></tbody></table>
+<p><strong>Modes</strong>: at least <code dir="auto">"insert"</code> (typing into the composer) and <code dir="auto">"normal"</code>
+(navigation). <code dir="auto">"*"</code> binds in all modes. The bundled default uses a <code dir="auto">dashboard</code>
+mode for the startup screen. Lua may define more modes and switch with
+<code dir="auto">actions.mode(name)</code>.</p>
+<p><strong>Chord syntax</strong> matches the daemon-adjacent convention: printable keys bare
+(<code dir="auto">j</code>, <code dir="auto">G</code>), modifiers bracketed (<code dir="auto">&#x3C;C-x></code>, <code dir="auto">&#x3C;M-x></code>, <code dir="auto">&#x3C;S-Tab></code>, <code dir="auto">&#x3C;CR></code>, <code dir="auto">&#x3C;Esc></code>,
+<code dir="auto">&#x3C;BS></code>, <code dir="auto">&#x3C;Tab></code>, <code dir="auto">&#x3C;Up></code>, <code dir="auto">&#x3C;F5></code>). Multi-key chords (<code dir="auto">gg</code>, <code dir="auto">&#x3C;leader>q</code>) are
+supported with a pending-chord timeout.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuilayout">yuke.tui.layout</h2><a class="sl-anchor-link" href="#yuketuilayout"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.layout”</span></a></div>
+<p>Declare the region tree for the single-session view. Leaves are built-in
+widgets (by name) or paint handles. Install the tree with <code dir="auto">set_root</code>.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">L</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">set_root</span><span style="--0:#D6DEEB;--1:#403F53">(</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">L</span><span style="--0:#D6DEEB;--1:#403F53">.</span><span style="--0:#C5E478;--1:#3B61B0">rows</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">L</span><span style="--0:#D6DEEB;--1:#403F53">.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">L</span><span style="--0:#D6DEEB;--1:#403F53">.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">transcript</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, { </span><span style="--0:#C5E478;--1:#3B61B0">grow</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">L</span><span style="--0:#D6DEEB;--1:#403F53">.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">composer</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,   { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">3</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">min</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">max</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">10</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="local L = yuke.tui.layoutyuke.tui.set_root(  L.rows {    L.leaf(&#x22;statusline&#x22;, { size = 1 }),    L.leaf(&#x22;transcript&#x22;, { grow = 1 }),    L.leaf(&#x22;composer&#x22;,   { size = 3, min = 1, max = 10 }),  })"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Node</th><th>Signature</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">L.rows{ ... }</code></td><td>children stacked top-to-bottom</td><td>a.k.a. horizontal split</td></tr><tr><td><code dir="auto">L.cols{ ... }</code></td><td>children left-to-right</td><td>a.k.a. vertical split</td></tr><tr><td><code dir="auto">L.leaf(widget, opts?)</code></td><td><code dir="auto">widget: string | PaintHandle</code></td><td>a built-in name or a <code dir="auto">paint.register</code> handle</td></tr><tr><td><code dir="auto">yuke.tui.set_root(node)</code></td><td>install / replace the root</td><td>call again to swap the whole UI</td></tr></tbody></table>
+<p><strong>Sizing opts</strong> on any child: <code dir="auto">size</code> (fixed rows / cols), <code dir="auto">grow</code> (flex weight,
+default <code dir="auto">1</code> when no <code dir="auto">size</code>), <code dir="auto">min</code>, <code dir="auto">max</code>, <code dir="auto">fit</code> (collapse when content is
+empty).</p>
+<p><strong>Built-in widgets</strong> (Rust-implemented leaves; each is replaceable by a paint
+handle):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Name</th><th>Renders</th></tr></thead><tbody><tr><td><code dir="auto">"transcript"</code></td><td>the scrolling conversation: user / assistant / tool blocks, <strong>live token streaming</strong> (text and reasoning), tool calls and results</td></tr><tr><td><code dir="auto">"composer"</code></td><td>the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs</td></tr><tr><td><code dir="auto">"statusline"</code></td><td>session title, model, reasoning, permission mode, turn / queued / connection state</td></tr><tr><td><code dir="auto">"working"</code></td><td>the spinner + <code dir="auto">opts.working_label</code> + elapsed time while a turn runs; collapses to zero height when idle (give it <code dir="auto">{ fit = true }</code>)</td></tr><tr><td><code dir="auto">"footer"</code></td><td>the mode / hint line plus any transient notice</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuipaint">yuke.tui.paint</h2><a class="sl-anchor-link" href="#yuketuipaint"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.paint”</span></a></div>
+<p>Register a callback that paints a leaf. The callback runs once per frame
+while its leaf is visible, receiving a <strong>slice</strong> (the leaf’s cell rectangle)
+and <code dir="auto">ctx</code>.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">hud</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.paint.</span><span style="--0:#C5E478;--1:#3B61B0">register</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">slice</span><span style="--0:#D9F5DD;--1:#111111">,</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">clear</span><span style="--0:#D6DEEB;--1:#403F53">()</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.session</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">line</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#F78C6C;--1:#AA0982">0</span><span style="--0:#D6DEEB;--1:#403F53">, {</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> </span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> (</span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">and</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.model </span><span style="--0:#C792EA;--1:#8844AE">or</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">no session</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">) </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline.model</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.turn.active </span><span style="--0:#C792EA;--1:#8844AE">and</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">  ● streaming</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#C792EA;--1:#8844AE">or</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">""</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">accent</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">})</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">, { </span><span style="--0:#919F9F;--1:#5F636F">/* options reserved for future use */</span><span style="--0:#D6DEEB;--1:#403F53"> })</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F">-- a paint handle is usable anywhere a widget name is:</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">set_root</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">rows</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">hud</span><span style="--0:#D6DEEB;--1:#403F53">,            { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">transcript</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,   { </span><span style="--0:#C5E478;--1:#3B61B0">grow</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">composer</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,     { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">3</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">})</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="local hud = yuke.tui.paint.register(function(slice, ctx)  slice:clear()  local s = ctx.session  slice:line(0, {    { &#x22; &#x22; .. (s and s.model or &#x22;no session&#x22;) .. &#x22; &#x22;, &#x22;statusline.model&#x22; },    { ctx.turn.active and &#x22;  ● streaming&#x22; or &#x22;&#x22;, &#x22;accent&#x22; },  })end, { /* options reserved for future use */ })-- a paint handle is usable anywhere a widget name is:yuke.tui.set_root(yuke.tui.layout.rows {  yuke.tui.layout.leaf(hud,            { size = 1 }),  yuke.tui.layout.leaf(&#x22;transcript&#x22;,   { grow = 1 }),  yuke.tui.layout.leaf(&#x22;composer&#x22;,     { size = 3 }),})"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="slice-methods">Slice methods</h3><a class="sl-anchor-link" href="#slice-methods"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Slice methods”</span></a></div>
+<p>The slice writes into the ratatui frame buffer for this leaf only. It is valid
+<strong>only during the callback</strong>; storing it and using it later raises a clean Lua
+error.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">slice.width</code>, <code dir="auto">slice.height</code></td><td>leaf dimensions in cells</td></tr><tr><td><code dir="auto">slice:set(col, row, ch, style?)</code></td><td>one cell; <code dir="auto">ch</code> is a string (only the first character is used)</td></tr><tr><td><code dir="auto">slice:put(col, row, text, style?) -> width</code></td><td>text from <code dir="auto">(col, row)</code>, returns columns advanced (unicode-width aware), clipped to the leaf</td></tr><tr><td><code dir="auto">slice:line(row, spans)</code></td><td>a styled line: <code dir="auto">spans</code> is <code dir="auto">{ { text, style }, ... }</code></td></tr><tr><td><code dir="auto">slice:fill(rect?, ch?, style?)</code></td><td>fill a sub-rect (or the whole leaf)</td></tr><tr><td><code dir="auto">slice:clear()</code></td><td>reset the leaf to the theme background</td></tr></tbody></table>
+<p><code dir="auto">style</code> is either a <strong>theme style name</strong> (string, e.g. <code dir="auto">"assistant"</code>,
+<code dir="auto">"border"</code>) or an inline table (see <code dir="auto">yuke.tui.theme</code>). <code dir="auto">rect</code> is
+<code dir="auto">{ col, row, width, height }</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="handle">Handle</h3><a class="sl-anchor-link" href="#handle"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Handle”</span></a></div>
+<p><code dir="auto">paint.register</code> returns a handle with one method:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">handle:remove()</code></td><td>unregister the callback; the leaf is empty until the layout drops the handle</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuitheme">yuke.tui.theme</h2><a class="sl-anchor-link" href="#yuketuitheme"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.theme”</span></a></div>
+<p>Named styles plus a palette. A <strong>style name</strong> used in <code dir="auto">slice</code> calls is
+resolved through the theme, so restyling restyles every widget that
+referenced the name.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.theme.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">palette</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">bg</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#11131a</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#c8d0e0</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">accent</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#7aa2f7</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">dim</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#5a627a</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">styles</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">user</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]            </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">fg</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">bold</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">true</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">assistant</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]       </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">fg</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">reasoning</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]       </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">dim</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">italic</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">true</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">tool.name</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]       </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">accent</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]      </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">fg</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">bg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#1a1d28</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline.model</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]</span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">fg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">accent</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">bold</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">true</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">selection</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]       </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">bg</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">#283457</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">[</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">cursor</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">]          </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">reverse</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">true</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.theme.set {  palette = {    bg     = &#x22;#11131a&#x22;,    fg     = &#x22;#c8d0e0&#x22;,    accent = &#x22;#7aa2f7&#x22;,    dim    = &#x22;#5a627a&#x22;,  },  styles = {    [&#x22;user&#x22;]            = { fg = &#x22;fg&#x22;, bold = true },    [&#x22;assistant&#x22;]       = { fg = &#x22;fg&#x22; },    [&#x22;reasoning&#x22;]       = { fg = &#x22;dim&#x22;, italic = true },    [&#x22;tool.name&#x22;]       = { fg = &#x22;accent&#x22; },    [&#x22;statusline&#x22;]      = { fg = &#x22;fg&#x22;, bg = &#x22;#1a1d28&#x22; },    [&#x22;statusline.model&#x22;]= { fg = &#x22;accent&#x22;, bold = true },    [&#x22;selection&#x22;]       = { bg = &#x22;#283457&#x22; },    [&#x22;cursor&#x22;]          = { reverse = true },  },}"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Function</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">theme.set(spec)</code></td><td><code dir="auto">spec</code>: <code dir="auto">{ palette, styles }</code>; merges over the current theme</td></tr><tr><td><code dir="auto">theme.use(name)</code></td><td>stub (loads a bundled colorscheme when the surface lands)</td></tr><tr><td><code dir="auto">theme.get(name)</code></td><td>stub</td></tr><tr><td><code dir="auto">theme.list()</code></td><td>stub</td></tr></tbody></table>
+<p><strong>Style table</strong> fields: <code dir="auto">fg</code>, <code dir="auto">bg</code> (a <code dir="auto">#rrggbb</code>, a palette key, a named
+terminal color, or <code dir="auto">"none"</code> to clear), and the booleans <code dir="auto">bold</code>, <code dir="auto">italic</code>,
+<code dir="auto">underline</code>, <code dir="auto">reverse</code>, <code dir="auto">dim</code>, <code dir="auto">strikethrough</code>.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuion">yuke.tui.on</h2><a class="sl-anchor-link" href="#yuketuion"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.on”</span></a></div>
+<p>Subscribe to events. Handlers receive <code dir="auto">(payload, ctx)</code> and may call actions.
+The <code dir="auto">turn_error</code> and <code dir="auto">disconnect</code> events are surfaced by the bundled default
+as transient notices.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">on</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">turn_error</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">payload</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">notify</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">payload</span><span style="--0:#D6DEEB;--1:#403F53">.message)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.on(&#x22;turn_error&#x22;, function(payload)  yuke.tui.notify(payload.message)end)"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Event</th><th>Payload</th><th>Source</th></tr></thead><tbody><tr><td><code dir="auto">turn_error</code></td><td><code dir="auto">{ code, message, timing }</code></td><td><code dir="auto">EngineEvent::Error</code></td></tr><tr><td><code dir="auto">disconnect</code></td><td><code dir="auto">{}</code></td><td>the daemon socket dropped (the manager reconnects in the background)</td></tr></tbody></table>
+<p>The full event catalogue (text deltas, tool calls, paste, focus, resize, etc.)
+is on the design plan; the current build wires the two the bundled default
+listens to. <code dir="auto">yuke.tui.on(event, fn)</code> accepts any event name and records the
+handler; unknown events still fire the handler at the next opportunity.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuicmd">yuke.tui.cmd</h2><a class="sl-anchor-link" href="#yuketuicmd"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.cmd”</span></a></div>
+<p>Client-side command-palette commands. A <code dir="auto">yuke.tui.cmd</code> runs in the TUI client
+and drives the UI; it is not the daemon’s <code dir="auto">yuke.on</code> (the lifecycle hooks that
+run in the engine, between turns). Invoke from a keymap (e.g. <code dir="auto">:</code> in the
+vim default) or from your own picker.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.cmd.</span><span style="--0:#C5E478;--1:#3B61B0">register</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">new</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, {</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">desc</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">new session</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">handler</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">_args</span><span style="--0:#D9F5DD;--1:#111111">,</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">_ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">new_session</span><span style="--0:#D6DEEB;--1:#403F53">()</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">})</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.cmd.register(&#x22;new&#x22;, {  desc    = &#x22;new session&#x22;,  handler = function(_args, _ctx)    yuke.tui.actions.new_session()  end,})"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">desc</code></td><td>string</td><td>shown in the command picker</td></tr><tr><td><code dir="auto">handler</code></td><td><code dir="auto">function(args, ctx)</code></td><td><code dir="auto">args</code> is an empty table in the current build; <code dir="auto">ctx</code> is the read-only state table</td></tr></tbody></table>
+<p>Every registered command shows up in <code dir="auto">ctx.commands</code> (as <code dir="auto">{ name, desc }</code>),
+which the bundled command-palette picker uses as its source.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuipicker">yuke.tui.picker</h2><a class="sl-anchor-link" href="#yuketuipicker"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.picker”</span></a></div>
+<p>A Telescope-style picker: a fuzzy-filtered list on the left, a preview on
+the right. Rust runs the filter, selection, overlay, and the live
+conversation preview; Lua owns the data, formatting, preview, and the action.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.keymap.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">dashboard</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">s</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">picker</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">title</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> sessions </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">layout</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">default</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">source</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.sessions,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">format</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">s</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">return</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.title </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">  </span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.model </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">match</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">s</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">return</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.title </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">preview</span><span style="--0:#D6DEEB;--1:#403F53">   </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">conversation</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">on_select</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">s</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">attach</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.id) </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke.tui.keymap.set(&#x22;dashboard&#x22;, &#x22;s&#x22;, function(ctx)  yuke.tui.picker {    title     = &#x22; sessions &#x22;,    layout    = &#x22;default&#x22;,    source    = ctx.sessions,    format    = function(s) return s.title .. &#x22;  &#x22; .. s.model end,    match     = function(s) return s.title end,    preview   = &#x22;conversation&#x22;,    on_select = function(s) yuke.tui.actions.attach(s.id) end,  }end)"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">source</code></td><td>array | <code dir="auto">function() -> array</code></td><td>the items; built-in data comes off <code dir="auto">ctx</code> (e.g. <code dir="auto">ctx.sessions</code>, <code dir="auto">ctx.models</code>, <code dir="auto">ctx.commands</code>)</td></tr><tr><td><code dir="auto">format</code></td><td><code dir="auto">function(item) -> string</code></td><td>the row label; defaults to <code dir="auto">tostring(item)</code></td></tr><tr><td><code dir="auto">match</code></td><td><code dir="auto">function(item) -> string</code></td><td>the fuzzy-match key; defaults to <code dir="auto">format</code></td></tr><tr><td><code dir="auto">preview</code></td><td><code dir="auto">true</code> | <code dir="auto">"conversation"</code> | <code dir="auto">function(item, slice, ctx)</code> | <code dir="auto">false</code> / <code dir="auto">nil</code></td><td>the preview content: <code dir="auto">true</code> / <code dir="auto">"conversation"</code> stream <code dir="auto">item.id</code>’s live conversation; a function paints the pane (a <code dir="auto">slice</code>, as in <code dir="auto">paint</code>); <code dir="auto">false</code> / <code dir="auto">nil</code> shows none</td></tr><tr><td><code dir="auto">on_select</code></td><td><code dir="auto">function(item, ctx)</code></td><td>runs on Enter; call <code dir="auto">actions.*</code> to act</td></tr><tr><td><code dir="auto">title</code></td><td>string</td><td>overlay title</td></tr><tr><td><code dir="auto">layout</code></td><td>preset name | table</td><td>the layout (see below); defaults to <code dir="auto">"default"</code></td></tr></tbody></table>
+<p>Keys inside a picker: type to filter, <code dir="auto">↑</code> / <code dir="auto">↓</code> / <code dir="auto">^p</code> / <code dir="auto">^n</code> move, <code dir="auto">Enter</code>
+selects, <code dir="auto">Esc</code> dismisses.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="layouts">Layouts</h3><a class="sl-anchor-link" href="#layouts"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Layouts”</span></a></div>
+<p>The <code dir="auto">layout</code> field positions and sizes the picker box and places the preview
+pane. Every preset supports a preview; whether it shows is the spec’s
+<code dir="auto">preview</code> field. Pass a preset name, or a table to customize.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Preset</th><th>Geometry</th></tr></thead><tbody><tr><td><code dir="auto">"default"</code></td><td>centered, 0.8 × 0.8, preview right</td></tr><tr><td><code dir="auto">"ivy"</code></td><td>docked to the bottom, full width, height 0.4, preview right</td></tr><tr><td><code dir="auto">"vertical"</code></td><td>centered, narrow (0.6 wide, 0.85 tall), preview below</td></tr><tr><td><code dir="auto">"simple"</code> / <code dir="auto">"select"</code></td><td>small centered box (0.6 × 0.5), preview right</td></tr><tr><td><code dir="auto">"vscode"</code> / <code dir="auto">"dropdown"</code></td><td>docked to the top, 0.6 × 0.45, preview below (a command-palette dropdown)</td></tr></tbody></table>
+<p>A table either starts from a <code dir="auto">preset</code> and overrides fields, or sets them from
+the <code dir="auto">"default"</code> base:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">layout</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">preset</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">ivy</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">height</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">0.5</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">preview_ratio</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">0.6</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">layout</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> { </span><span style="--0:#C5E478;--1:#3B61B0">position</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">bottom</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">width</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1.0</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">height</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">0.3</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">preview</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">false</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="layout = { preset = &#x22;ivy&#x22;, height = 0.5, preview_ratio = 0.6 }layout = { position = &#x22;bottom&#x22;, width = 1.0, height = 0.3, preview = false }"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Layout field</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">preset</code></td><td>string</td><td>a base preset to start from (default <code dir="auto">"default"</code>)</td></tr><tr><td><code dir="auto">position</code></td><td><code dir="auto">"center"</code> | <code dir="auto">"top"</code> | <code dir="auto">"bottom"</code></td><td>screen anchor</td></tr><tr><td><code dir="auto">width</code>, <code dir="auto">height</code></td><td>number (0..1)</td><td>box size as a fraction of the screen</td></tr><tr><td><code dir="auto">preview</code></td><td><code dir="auto">true</code> | <code dir="auto">false</code> | <code dir="auto">"right"</code> | <code dir="auto">"below"</code></td><td>preview placement, or <code dir="auto">false</code> to hide the pane regardless of content</td></tr><tr><td><code dir="auto">preview_ratio</code></td><td>number (0..1)</td><td>fraction of the box given to the preview pane</td></tr><tr><td><code dir="auto">prompt</code></td><td><code dir="auto">"top"</code> | <code dir="auto">"bottom"</code></td><td>filter-line position within the results pane</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuioverlay">yuke.tui.overlay</h2><a class="sl-anchor-link" href="#yuketuioverlay"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.overlay”</span></a></div>
+<p>Overlays are floating nodes drawn over the root, for modals, pickers, and
+the permission prompt. A custom picker is just an <code dir="auto">overlay.open</code> over a
+<code dir="auto">paint</code> leaf.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ov</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.overlay.</span><span style="--0:#C5E478;--1:#3B61B0">open</span><span style="--0:#D6DEEB;--1:#403F53">(</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">my_paint_handle</span><span style="--0:#D6DEEB;--1:#403F53">),</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#C5E478;--1:#3B61B0">anchor</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">center</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">width</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">60</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">height</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">12</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">border</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">true</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">title</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Details</span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F">-- ov:close()</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="local ov = yuke.tui.overlay.open(  yuke.tui.layout.leaf(my_paint_handle),  { anchor = &#x22;center&#x22;, width = 60, height = 12, border = true, title = &#x22;Details&#x22; })-- ov:close()"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Function</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">overlay.open(node, opts) -> handle</code></td><td><code dir="auto">opts</code>: <code dir="auto">anchor</code> (<code dir="auto">"center"</code> | <code dir="auto">"top"</code> | <code dir="auto">"bottom"</code>), <code dir="auto">width</code>, <code dir="auto">height</code>, <code dir="auto">border</code>, <code dir="auto">title</code></td></tr><tr><td><code dir="auto">handle:close()</code></td><td>dismiss the overlay</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="yuketuinotify-and-small-helpers">yuke.tui.notify and small helpers</h2><a class="sl-anchor-link" href="#yuketuinotify-and-small-helpers"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “yuke.tui.notify and small helpers”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Function</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">yuke.tui.notify(text)</code></td><td>transient footer notice (the same as <code dir="auto">actions.notify</code>)</td></tr><tr><td><code dir="auto">yuke.tui.redraw()</code></td><td>request a repaint (a no-op; a redraw follows every event)</td></tr><tr><td><code dir="auto">yuke.tui.reload()</code></td><td>stub (re-run bundled + user <code dir="auto">init.lua</code>)</td></tr><tr><td><code dir="auto">yuke.tui.version</code></td><td>the TUI version string</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="worked-example-a-minimal-user-overlay">Worked example: a minimal user overlay</h2><a class="sl-anchor-link" href="#worked-example-a-minimal-user-overlay"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Worked example: a minimal user overlay”</span></a></div>
+<p>A user file that keeps the bundled transcript / composer but replaces the
+statusline with a custom paint leaf and rebinds a couple of keys.</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="lua"><code><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F">-- ~/.yuke/tui/init.lua  (runs after the bundled default)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">status</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.paint.</span><span style="--0:#C5E478;--1:#3B61B0">register</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">slice</span><span style="--0:#D9F5DD;--1:#111111">,</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">fill</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#82AAFF;--1:#3B61B0">nil</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.session</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">left</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">and</span><span style="--0:#D6DEEB;--1:#403F53"> (</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> </span><span style="--0:#D9F5DD;--1:#111111">" </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.title </span><span style="--0:#7FDBCA;--1:#096E72">..</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">) </span><span style="--0:#C792EA;--1:#8844AE">or</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> (no session) </span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">put</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#F78C6C;--1:#AA0982">0</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#F78C6C;--1:#AA0982">0</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">left</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">local</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">right</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">and</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">string.format</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">%s · %s · %s </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.model, </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.reasoning, </span><span style="--0:#C5E478;--1:#3B61B0">s</span><span style="--0:#D6DEEB;--1:#403F53">.permission) </span><span style="--0:#C792EA;--1:#8844AE">or</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">""</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">put</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">slice</span><span style="--0:#D6DEEB;--1:#403F53">.width </span><span style="--0:#7FDBCA;--1:#096E72">-</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">#</span><span style="--0:#C5E478;--1:#3B61B0">right</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#F78C6C;--1:#AA0982">0</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">right</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">statusline.model</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C792EA;--1:#8844AE">if</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.turn.active </span><span style="--0:#C792EA;--1:#8844AE">then</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#FFCB8B;--1:#111111">slice</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">put</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">slice</span><span style="--0:#D6DEEB;--1:#403F53">.width </span><span style="--0:#7FDBCA;--1:#096E72">//</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">2</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#F78C6C;--1:#AA0982">0</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">● streaming</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">accent</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">) </span><span style="--0:#C792EA;--1:#8844AE">end</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">set_root</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">rows</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">status</span><span style="--0:#D6DEEB;--1:#403F53">,         { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">transcript</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,   { </span><span style="--0:#C5E478;--1:#3B61B0">grow</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.layout.</span><span style="--0:#C5E478;--1:#3B61B0">leaf</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">composer</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,     { </span><span style="--0:#C5E478;--1:#3B61B0">size</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">3</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">min</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C5E478;--1:#3B61B0">max</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">8</span><span style="--0:#D6DEEB;--1:#403F53"> }),</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">})</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.keymap.</span><span style="--0:#C5E478;--1:#3B61B0">set</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">*</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">&#x3C;C-o></span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">ctx</span><span style="--0:#D9F5DD;--1:#111111">)</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.</span><span style="--0:#C5E478;--1:#3B61B0">picker</span><span style="--0:#D6DEEB;--1:#403F53"> {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">title</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D"> model </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">layout</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">simple</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#C5E478;--1:#3B61B0">source</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ctx</span><span style="--0:#D6DEEB;--1:#403F53">.models,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">format</span><span style="--0:#D6DEEB;--1:#403F53">    </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">m</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">return</span><span style="--0:#D6DEEB;--1:#403F53"> (</span><span style="--0:#C5E478;--1:#3B61B0">m</span><span style="--0:#D6DEEB;--1:#403F53">.</span><span style="--0:#FFCB8B;--1:#111111">name</span><span style="--0:#D6DEEB;--1:#403F53">:</span><span style="--0:#C5E478;--1:#3B61B0">gsub</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">^.*/</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">""</span><span style="--0:#D6DEEB;--1:#403F53">)) </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">match</span><span style="--0:#D6DEEB;--1:#403F53">     </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">m</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">return</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">m</span><span style="--0:#D6DEEB;--1:#403F53">.name </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#82AAFF;--1:#3B61B0">on_select</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#7FDBCA;--1:#096E72">=</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C792EA;--1:#8844AE">function</span><span style="--0:#D9F5DD;--1:#111111">(</span><span style="--0:#7FDBCA;--1:#096E72">m</span><span style="--0:#D9F5DD;--1:#111111">)</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">yuke</span><span style="--0:#D6DEEB;--1:#403F53">.tui.actions.</span><span style="--0:#C5E478;--1:#3B61B0">set_model</span><span style="--0:#D6DEEB;--1:#403F53">(</span><span style="--0:#C5E478;--1:#3B61B0">m</span><span style="--0:#D6DEEB;--1:#403F53">.name) </span><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">end</span><span style="--0:#D6DEEB;--1:#403F53">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="-- ~/.yuke/tui/init.lua  (runs after the bundled default)local status = yuke.tui.paint.register(function(slice, ctx)  slice:fill(nil, &#x22; &#x22;, &#x22;statusline&#x22;)  local s = ctx.session  local left = s and (&#x22; &#x22; .. s.title .. &#x22; &#x22;) or &#x22; (no session) &#x22;  slice:put(0, 0, left, &#x22;statusline&#x22;)  local right = s and string.format(&#x22;%s · %s · %s &#x22;, s.model, s.reasoning, s.permission) or &#x22;&#x22;  slice:put(slice.width - #right, 0, right, &#x22;statusline.model&#x22;)  if ctx.turn.active then slice:put(slice.width // 2, 0, &#x22;● streaming&#x22;, &#x22;accent&#x22;) endend)yuke.tui.set_root(yuke.tui.layout.rows {  yuke.tui.layout.leaf(status,         { size = 1 }),  yuke.tui.layout.leaf(&#x22;transcript&#x22;,   { grow = 1 }),  yuke.tui.layout.leaf(&#x22;composer&#x22;,     { size = 3, min = 1, max = 8 }),})yuke.tui.keymap.set(&#x22;*&#x22;, &#x22;<C-o>&#x22;, function(ctx)  yuke.tui.picker {    title     = &#x22; model &#x22;,    layout    = &#x22;simple&#x22;,    source    = ctx.models,    format    = function(m) return (m.name:gsub(&#x22;^.*/&#x22;, &#x22;&#x22;)) end,    match     = function(m) return m.name end,    on_select = function(m) yuke.tui.actions.set_model(m.name) end,  }end)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="running-it">Running it</h2><a class="sl-anchor-link" href="#running-it"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Running it”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="sh"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">yuke-tui</span><span style="--0:#D6DEEB;--1:#403F53">                                  </span><span style="--0:#919F9F;--1:#5F636F"># connect to 127.0.0.1:7878</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">yuke-tui</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">192.168.1.10:7878</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># connect to a remote daemon</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">yuke-tui</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">ws://host:port/ws</span><span style="--0:#D6DEEB;--1:#403F53">                </span><span style="--0:#919F9F;--1:#5F636F"># full URL form</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="yuke-tui                                  # connect to 127.0.0.1:7878yuke-tui 192.168.1.10:7878                # connect to a remote daemonyuke-tui ws://host:port/ws                # full URL form"><div></div></button></div></figure></div>
+<p>The CLI argument overrides <code dir="auto">opts.daemon</code>. The client never blocks on
+connection: if the daemon is down, the manager retries in the background and
+the UI runs in a disconnected state. The first successful connect marks the
+UI connected.</p> </div> <footer class="sl-flex astro-3yyafb3n"> <div class="meta sl-flex astro-3yyafb3n"> <a href="https://github.com/xyaman/yuke-website/edit/main/src/content/docs/tui.md" class="sl-flex print:hidden astro-eez2twj6"><svg aria-hidden="true" class="astro-eez2twj6 astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a>  </div> <div class="pagination-links print:hidden astro-u2l5gyhi" dir="ltr"> <a href="/yuke-website/daemon-mode/" rel="prev" class="astro-u2l5gyhi"> <svg aria-hidden="true" class="astro-u2l5gyhi astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg> <span class="astro-u2l5gyhi"> Previous <br class="astro-u2l5gyhi"> <span class="link-title astro-u2l5gyhi">Daemon mode</span> </span> </a> <a href="/yuke-website/lua-config/" rel="next" class="astro-u2l5gyhi"> <svg aria-hidden="true" class="astro-u2l5gyhi astro-c6vsoqas" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg> <span class="astro-u2l5gyhi"> Next <br class="astro-u2l5gyhi"> <span class="link-title astro-u2l5gyhi">init.lua</span> </span> </a> </div>  </footer> </div> </div>  </main> </div> </div> </div> </div> </body></html>
