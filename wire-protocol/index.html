@@ -243,7 +243,7 @@ background session can still surface a prompt or a failure. The gating only
 applies to the per-session <code dir="auto">Agent</code> content stream.</p>
 <div class="sl-heading-wrapper level-h3"><h3 id="sessionconfig">SessionConfig</h3><a class="sl-anchor-link" href="#sessionconfig"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “SessionConfig”</span></a></div>
 <p>The optional fields a client sets when creating a session. Any field left out
-takes the profile’s <code dir="auto">yuke.opts{}</code> default.</p>
+takes the profile’s <code dir="auto">yuke.opts</code> default.</p>
 
 
 
@@ -331,7 +331,7 @@ session’s engine:</p>
 
 
 
-<table><thead><tr><th>variant</th><th>payload</th><th>role</th></tr></thead><tbody><tr><td><code dir="auto">UserMessage</code></td><td><code dir="auto">{ content, model?, reasoning? }</code></td><td>new user message driving a turn; optional model/reasoning switch persists for later turns</td></tr><tr><td><code dir="auto">PermissionDecision</code></td><td><code dir="auto">{ id, allow, remember? }</code></td><td>reply to a <code dir="auto">RequestPermission</code> engine event</td></tr><tr><td><code dir="auto">SetPermissionMode</code></td><td><code dir="auto">{ mode }</code></td><td>change the session’s mode, effective at the next tool gate</td></tr><tr><td><code dir="auto">Cancel</code></td><td><code dir="auto">{}</code></td><td>cancel the in-flight turn</td></tr><tr><td><code dir="auto">Eval</code></td><td><code dir="auto">{ id, code }</code></td><td>evaluate Lua against the session’s VM; only enabled when <code dir="auto">yuke.opts { allow_eval = true }</code></td></tr></tbody></table>
+<table><thead><tr><th>variant</th><th>payload</th><th>role</th></tr></thead><tbody><tr><td><code dir="auto">UserMessage</code></td><td><code dir="auto">{ content, model?, reasoning? }</code></td><td>new user message driving a turn; optional model/reasoning switch persists for later turns</td></tr><tr><td><code dir="auto">PermissionDecision</code></td><td><code dir="auto">{ id, allow, remember? }</code></td><td>reply to a <code dir="auto">RequestPermission</code> engine event</td></tr><tr><td><code dir="auto">SetPermissionMode</code></td><td><code dir="auto">{ mode }</code></td><td>change the session’s mode, effective at the next tool gate</td></tr><tr><td><code dir="auto">Cancel</code></td><td><code dir="auto">{}</code></td><td>cancel the in-flight turn</td></tr><tr><td><code dir="auto">Eval</code></td><td><code dir="auto">{ id, code }</code></td><td>evaluate Lua against the session’s VM; only enabled when <code dir="auto">yuke.opts.allow_eval = true</code></td></tr></tbody></table>
 <p><code dir="auto">remember: true</code> on <code dir="auto">PermissionDecision</code> persists an “allow always” rule for
 that exact call, so future calls of the same form skip the prompt entirely.
 Eval runs serialized with turns: an <code dir="auto">Eval</code> sent mid-turn waits until the turn

@@ -279,7 +279,7 @@ backend, since the Codex backend and the OpenAI API accept different levels:</p>
 <table><thead><tr><th>protocol</th><th>default levels</th></tr></thead><tbody><tr><td><code dir="auto">completions</code></td><td><code dir="auto">minimal</code>, <code dir="auto">low</code>, <code dir="auto">medium</code>, <code dir="auto">high</code></td></tr><tr><td><code dir="auto">codex</code></td><td><code dir="auto">low</code>, <code dir="auto">medium</code>, <code dir="auto">high</code>, <code dir="auto">xhigh</code></td></tr><tr><td><code dir="auto">anthropic</code></td><td>none (no effort knob)</td></tr></tbody></table>
 <p>An empty array (<code dir="auto">"reasoning_levels": []</code>) means the model has no reasoning
 knob. A session starts at the <strong>middle</strong> level of the set unless the profile’s
-<code dir="auto">yuke.opts{ reasoning_effort = ... }</code> names one the model offers, or a client
+<code dir="auto">yuke.opts.reasoning_effort</code> names one the model offers, or a client
 forces one via <code dir="auto">SessionConfig.reasoning</code> / <code dir="auto">--reasoning</code>. The chosen level is
 saved with the session and clamped to the model’s set when the model is
 switched.</p>
