@@ -20,8 +20,8 @@ yuke [OPTIONS]
 | `--model <NAME>`        | Catalog model to run on (overrides the profile default). Applied to a new session; a resumed session keeps the model it was saved with. |
 | `--reasoning <LEVEL>`   | Reasoning level (e.g. `low`, `medium`, `high`); clamped to the model's supported levels.                  |
 | `--system <PROMPT>`     | System prompt override for a new session.                                                                |
-| `--profile <NAME>`      | Base Lua config for a new session: `init_<NAME>.lua`. Default profile loads `init.lua`.                  |
-| `--config-dir <DIR>`    | Profile dir holding `providers.json`, `auth.json`, profile scripts, and `workspaces/` (default: `~/.yuke`). |
+| `--profile <NAME>`      | Base Lua config for a new session: `init_<NAME>.lua`. The default profile is `init.lua`. Persisted with the session so `--resume` rebuilds on the same profile. |
+| `--config-dir <DIR>`    | Config dir holding `providers.json`, `auth.json`, profile scripts, and `workspaces/` (default: `~/.yuke`). Shared by oneshot and daemon. |
 
 `--output-format json` is the scriptable form:
 

@@ -35,7 +35,7 @@ input the prompt is the stdin text:
 echo "what is in Cargo.toml?" | yuke
 ```
 
-## Pick a profile directory
+## Pick a config directory
 
 By default yuke reads `~/.yuke/providers.json`, `~/.yuke/auth.json`, and the
 profile scripts (`init.lua`, `init_<NAME>.lua`) from `~/.yuke`. Override with
@@ -46,9 +46,28 @@ yuke --config-dir ./my-profile
 ```
 
 yuke looks for `./my-profile/providers.json` (and `./my-profile/auth.json` plus
-profile scripts) and treats that directory as the profile root. Relative paths
-in `yuke.fs` and `yuke.exec` resolve against the **session workspace**, not
-the profile directory.
+profile scripts) and treats that directory as the config root. The same flag
+applies to `yuke daemon`, so one `--config-dir` keeps the catalog, credentials,
+profiles, and `workspaces/` store together. Relative paths in `yuke.fs` and
+`yuke.exec` resolve against the **session workspace**, not the config
+directory.
+
+## Pick a profile
+
+A profile is a base Lua config: the **default** profile is `init.lua`; a
+**named** profile `foo` is `init_foo.lua`. Profiles share `auth.json`,
+`providers.json`, and saved sessions; only the base Lua differs. Pick one per
+session with `--profile <NAME>`:
+
+```sh
+yuke -p "summarize the files in this directory" --profile work
+```
+
+If you skip `--profile`, yuke loads `init.lua`. The choice is persisted with
+the session, so a `--resume` rebuilds on the same profile. Selecting a named
+profile that does not exist is an error at session-build time. See [Daemon
+mode → Profiles](/daemon-mode/#profiles) for how profiles work on the
+daemon side and how a removed profile migrates a saved session to `default`.
 
 ## Pick a model
 
