@@ -6,7 +6,7 @@ description: Session policy, tools, and hooks for init.lua (the optional Lua con
 `~/.yuke/init.lua` is optional. If it is present, the daemon runs it once per
 new session, followed by any workspace `.yuke/init.lua` overlay, to declare
 session policy, tools, and hooks. The model catalog lives separately in
-[providers.json](/providers/); credentials live in `auth.json`; this file is
+[providers.json](providers/); credentials live in `auth.json`; this file is
 for behavior, not data.
 
 This page is the API reference for the four top-level calls available in
@@ -15,7 +15,7 @@ This page is the API reference for the four top-level calls available in
 - `yuke.opts` — session policy
 - `yuke.tool` — register a model-facing tool
 - `yuke.on` — register lifecycle and tool-gate listeners
-- the [runtime primitives](/primitives/) tool handlers use
+- the [runtime primitives](primitives/) tool handlers use
   (`yuke.fs`, `yuke.exec`, `yuke.http`, `yuke.glob`, `yuke.env`, `yuke.json`,
   `yuke.log`, `yuke.sleep`)
 
@@ -175,7 +175,7 @@ A handler may return:
 - a **table** — JSON-encoded automatically
 
 Any other return is converted with the runtime's JSON encoder. For a worked
-example see [Writing tools](/tools/).
+example see [Writing tools](tools/).
 
 ---
 

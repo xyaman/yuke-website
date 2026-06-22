@@ -76,8 +76,8 @@ characters and doubles as the on-disk JSONL transcript file name.
 
 Clients create a workspace (or find one that already exists) and create a
 session inside it. The full flow lives in the [Wire
-protocol](/wire-protocol/); the short version is in [Wire protocol →
-ClientMessage](/wire-protocol/#clientmessage) below.
+protocol](wire-protocol/); the short version is in [Wire protocol →
+ClientMessage](wire-protocol/#clientmessage) below.
 
 ## Permission modes and the approval loop
 
@@ -90,7 +90,7 @@ escalates a call to `Ask`. It replies with an `EngineCommand::PermissionDecision
 carrying `{ allow, remember }`. A `remember: true` answer is persisted as a
 standing "allow always" rule for that exact call, so future calls of the same
 form skip the prompt entirely. A Lua `deny` is a hard floor that holds even in
-`yolo`; see [init.lua → yuke.on](/lua-config/#yukueon) for the hook side.
+`yolo`; see [init.lua → yuke.on](lua-config/#yukueon) for the hook side.
 
 The daemon's `--permission` flag sets the default mode for sessions whose
 client names none; each session can override at create time.
@@ -98,21 +98,21 @@ client names none; each session can override at create time.
 ## What is on the wire
 
 The daemon speaks a JSON-over-WebSocket protocol described in [Wire
-protocol](/wire-protocol/). The short version: one persistent channel, two
+protocol](wire-protocol/). The short version: one persistent channel, two
 message directions (`ServerMessage` from daemon, `ClientMessage` from client).
 Implementations in any language that can hold a WebSocket open can talk to the
 daemon.
 
 ## When to use which
 
-- **Local mode** ([oneshot](/local-mode/)): one terminal, one turn at a time,
+- **Local mode** ([oneshot](local-mode/)): one terminal, one turn at a time,
   fastest startup. Auto-approves every tool call.
 - **Daemon mode**: long-lived session, multiple clients, custom frontends
   (TUIs, IDE plugins) that connect over WebSocket, interactive approval.
 
 ## Next
 
-- [Provider catalog](/providers/) for the catalog format and reload semantics.
-- [init.lua](/lua-config/) for session policy, tools, hooks, and the permission
+- [Provider catalog](providers/) for the catalog format and reload semantics.
+- [init.lua](lua-config/) for session policy, tools, hooks, and the permission
   gates.
-- [Wire protocol](/wire-protocol/) to integrate a non-yuke client.
+- [Wire protocol](wire-protocol/) to integrate a non-yuke client.

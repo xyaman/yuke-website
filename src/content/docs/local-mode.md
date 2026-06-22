@@ -66,7 +66,7 @@ yuke -p "summarize the files in this directory" --profile work
 If you skip `--profile`, yuke loads `init.lua`. The choice is persisted with
 the session, so a `--resume` rebuilds on the same profile. Selecting a named
 profile that does not exist is an error at session-build time. See [Daemon
-mode → Profiles](/daemon-mode/#profiles) for how profiles work on the
+mode → Profiles](daemon-mode/#profiles) for how profiles work on the
 daemon side and how a removed profile migrates a saved session to `default`.
 
 ## Pick a model
@@ -80,7 +80,7 @@ yuke --model openai/o3
 ```
 
 The argument is the catalog key `"provider/model"` (see [Provider
-catalog](/providers/)). A bare model name works when it is unambiguous across
+catalog](providers/)). A bare model name works when it is unambiguous across
 all providers in the catalog; an ambiguous bare name errors at session-build
 time with a disambiguation hint.
 
@@ -109,14 +109,14 @@ This overrides the `prompt` from `yuke.opts { ... }` for this session only.
 A oneshot is headless, so it **auto-approves every tool call** the model
 makes (including `yuke.exec` and `yuke.fs.write`); there is no interactive
 approval prompt. Only run prompts you are willing to let your `init.lua` tools
-act on. For interactive approval, run [daemon mode](/daemon-mode/) and connect
+act on. For interactive approval, run [daemon mode](daemon-mode/) and connect
 a client that handles `RequestPermission`.
 
 ## Built-in primitives
 
 The `yuke.*` table is injected into `init.lua` and every tool handler. Local
 mode and daemon mode share the same primitives; the table below is the short
-version. The full reference is in [Lua primitives](/primitives/).
+version. The full reference is in [Lua primitives](primitives/).
 
 | Primitive                          | Description                                  |
 |------------------------------------|----------------------------------------------|
@@ -141,5 +141,5 @@ version. The full reference is in [Lua primitives](/primitives/).
 
 ## Next
 
-- [Daemon mode](/daemon-mode/) for long-lived sessions over WebSocket.
-- [Lua configuration](/lua-config/) for the full `init.lua` API.
+- [Daemon mode](daemon-mode/) for long-lived sessions over WebSocket.
+- [Lua configuration](lua-config/) for the full `init.lua` API.

@@ -9,7 +9,7 @@ providers and models; the daemon re-reads the file on demand so an edit takes
 effect for the next session and the next client connection without a restart.
 
 `init.lua` is a separate, optional file for [session policy, tools, and
-hooks](/lua-config/). Credentials live in a third file, `~/.yuke/auth.json`,
+hooks](lua-config/). Credentials live in a third file, `~/.yuke/auth.json`,
 keyed by provider name. The split is clean: data in JSON, behavior in Lua,
 secrets in a `0600` auth file.
 

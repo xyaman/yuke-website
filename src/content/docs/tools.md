@@ -4,7 +4,7 @@ description: Worked examples of model-facing tools built from yuke primitives.
 ---
 
 These are the tools you'd actually register, built from the
-[primitives](/primitives/). Drop them in `init.lua`, or split them across
+[primitives](primitives/). Drop them in `init.lua`, or split them across
 files and `require` them. The model can call them like any other tool.
 
 ## edit (string replacement)
@@ -147,7 +147,7 @@ history independently.
 
 ## Hooks on top
 
-The `yuke.on` listeners in [Lua configuration](/lua-config/#yukueon) gate or
+The `yuke.on` listeners in [Lua configuration](lua-config/#yukueon) gate or
 audit these tools. A common pair:
 
 ```lua

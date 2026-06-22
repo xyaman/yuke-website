@@ -85,8 +85,8 @@ A provider with no usable credential in `auth.json` is dropped from the
 catalog, so the models advertised to a client are exactly the ones a session
 can be built on.
 
-See [Provider catalog](/providers/) for the full `providers.json` schema and
-[init.lua](/lua-config/) for `yuke.opts`, `yuke.tool`, and `yuke.on`.
+See [Provider catalog](providers/) for the full `providers.json` schema and
+[init.lua](lua-config/) for `yuke.opts`, `yuke.tool`, and `yuke.on`.
 
 ## Run
 
@@ -129,12 +129,12 @@ indexes the store at startup. Any WebSocket client can connect.
 
 ## Next
 
-- [CLI options](/cli/) covers every `yuke` and `yuke daemon` flag.
-- [Local mode](/local-mode/) is the oneshot in depth: profiles, models, output.
-- [Daemon mode](/daemon-mode/) covers the WebSocket endpoint, workspaces,
+- [CLI options](cli/) covers every `yuke` and `yuke daemon` flag.
+- [Local mode](local-mode/) is the oneshot in depth: profiles, models, output.
+- [Daemon mode](daemon-mode/) covers the WebSocket endpoint, workspaces,
   profiles, and auth tokens.
-- [Provider catalog](/providers/) covers the full `providers.json` schema.
-- [init.lua](/lua-config/) is the full API for `init.lua`: session policy,
+- [Provider catalog](providers/) covers the full `providers.json` schema.
+- [init.lua](lua-config/) is the full API for `init.lua`: session policy,
   tools, hooks.
-- [Writing tools](/tools/) is a worked example of registering a tool the model
+- [Writing tools](tools/) is a worked example of registering a tool the model
   can call.

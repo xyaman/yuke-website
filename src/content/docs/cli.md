@@ -75,8 +75,8 @@ tool call resolves when no Lua hook has spoken:
 | `strict` | Ask for anything not explicitly allowed by Lua or remembered by an "always" answer.            |
 
 A Lua `deny` is a hard floor that holds even in `yolo`. A remembered "allow
-always" suppresses an `ask` in every mode. See [init.lua](/lua-config/#yukueon)
-for the hook side of this and [Wire protocol](/wire-protocol/) for how a
+always" suppresses an `ask` in every mode. See [init.lua](lua-config/#yukueon)
+for the hook side of this and [Wire protocol](wire-protocol/) for how a
 client answers a `RequestPermission` event.
 
 ## Environment variables
