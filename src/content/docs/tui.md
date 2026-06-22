@@ -50,42 +50,48 @@ desync the protocol: every state change goes through `yuke.tui.actions.*`.
 The TUI's Lua config is built from two layers, run in one VM in order:
 
 1. **Bundled default** — embedded in the binary, sets the theme, the root
-   layout (statusline / transcript / composer), the standard keymaps, and the
-   built-in commands. Ships so the TUI is fully usable with no user config.
+   layouts (the dashboard with the bull logo, the session view with the
+   statusline / transcript / composer), the standard keymaps, and the built-in
+   commands. Ships so the TUI is fully usable with no user config.
 2. **User overlay** — `~/.yuke/tui/init.lua` (optional), runs after the default
    and can extend it (add a sidebar, rebind keys, register commands) or
    replace it wholesale (`yuke.tui.set_root(...)` with a fresh tree).
 
-The bundled default boots in `insert` mode with emacs / readline editing
-keys. Setting `opts.vim = true` loads the bundled `runtime/vim.lua`, which
-adds a `normal` mode reachable with `<Esc>`, with vim motions, operators, and
-edits on the composer. Either way, every binding is plain `keymap.set`, so vim
-is just the bundled default, not a hardcoded mode.
+The bundled default boots in `dashboard` mode (the startup screen) and
+transitions to `insert` mode on attach. Setting `yuke.tui.opts.vim = true`
+loads the bundled `runtime/vim.lua`, which adds a `normal` mode reachable with
+`<Esc>`, with vim motions, operators, and edits on the composer. Either way,
+every binding is plain `keymap.set`, so vim is just the bundled default, not a
+hardcoded mode.
 
 ---
 
 ## yuke.tui.opts
 
-Client-level options. Call once at the top of `init.lua`; the bundled default
-sets values first, so a user file only overrides what it cares about.
+Client-level options. Set each field with a single assignment; an unknown
+field errors at that line, mirroring the daemon's `yuke.opts`. The bundled
+default sets values first, so a user file only overrides what it cares about.
+Calling `yuke.tui.opts{ ... }` is no longer supported.
 
 ```lua
-yuke.tui.opts {
-  daemon          = "127.0.0.1:7878",
-  vim             = false,                      -- modal composer + vim motions
-  start_mode      = "insert",
-  working_label   = "working…",
-  working_frames  = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" },
-}
+yuke.tui.opts.daemon         = "127.0.0.1:7878"
+yuke.tui.opts.vim            = false                      -- modal composer + vim motions
+yuke.tui.opts.start_mode     = "insert"
+yuke.tui.opts.working_label  = "working…"
+yuke.tui.opts.working_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+yuke.tui.opts.scroll_lines   = 2                          -- rows per mouse-wheel notch
+yuke.tui.opts.border         = "rounded"                  -- inherited window-border style
 ```
 
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `daemon` | string | `"127.0.0.1:7878"` | `host:port` or a full `ws://` / `wss://` URL. A CLI positional argument overrides this. |
 | `vim` | bool | `false` | when `true`, loads the bundled vim bindings (`runtime/vim.lua`); the composer is modal with vim motions and edits |
-| `start_mode` | string | `"insert"` | the key mode the app boots in |
+| `start_mode` | string | `"insert"` | the key mode the session view boots in (the dashboard always uses `"dashboard"`) |
 | `working_label` | string | `"working…"` | label of the built-in `working` leaf |
 | `working_frames` | string[] | the Braille dots | the spinner frames the `working` leaf cycles over time |
+| `scroll_lines` | integer | `2` | rows one mouse-wheel notch scrolls; a small step stays smooth on trackpads that emit a burst per gesture. Raise it for a click wheel that emits one event per notch. |
+| `border` | string \| table | `"rounded"` | the inherited window-border style every bordered node starts from; a charset name (`"rounded"` \| `"double"` \| `"thick"` \| `"single"`) or a `{ type, sides, style, title }` table. See [`yuke.tui.layout`](#yuketuilayout) for the table form. |
 
 ---
 
@@ -97,14 +103,28 @@ Handed to every paint callback, hook, keymap, and command handler.
 | Field | Type | Notes |
 |---|---|---|
 | `ctx.connected` | bool | daemon socket up |
-| `ctx.mode` | string | active key mode (`"insert"`, `"normal"`, ...) |
+| `ctx.mode` | string | active key mode (`"dashboard"`, `"insert"`, `"normal"`, ...) |
+| `ctx.focus` | string | id of the focused region (`"composer"`, `"transcript"`, an overlay id) |
 | `ctx.size` | table | screen dimensions `{ width, height }` |
-| `ctx.input` | table | composer: `{ text = <string> }` |
+| `ctx.input` | table | composer: `{ text = <string>, lines = <string[]>, cursor = { row, col } }` — `text` is the full buffer joined by `\n`; `lines` is the logical lines; `cursor` is the logical (0-based) position |
+| `ctx.scroll` | table | `{ offset, at_bottom }` — `offset` is rows above the bottom, `at_bottom` is `true` when the transcript is pinned to the latest |
 | `ctx.turn` | table | `{ active, queued, elapsed_ms, tokens, spinner, thinking }`: whether a turn is in flight, queued user messages behind it, milliseconds elapsed, token count, the spinner frame counter, and whether the model is in a reasoning ("thinking") block |
-| `ctx.session` | table? | focused session: `{ id, model, reasoning, permission, title }`; `nil` before attach |
+| `ctx.session` | table? | focused session: `{ id, model, reasoning, permission, title, workspace, message_count }`; `nil` before attach |
+| `ctx.workspace` | table? | focused session's workspace: `{ id, root, title }`; `nil` before attach or when the workspace is unknown |
 | `ctx.sessions` | `Session[]` | every live session, for a Lua `picker(spec)` source |
+| `ctx.workspaces` | `Workspace[]` | every open workspace, for a Lua `picker(spec)` source |
+| `ctx.profiles` | `string[]` | profile names advertised by the daemon, for a Lua `picker(spec)` source |
 | `ctx.models` | `Model[]` | advertised catalog, for a Lua `picker(spec)` source: `{ name, protocol, reasoning_levels, default_reasoning }` |
 | `ctx.commands` | `Command[]` | every registered client command, for a command-palette picker: `{ name, desc }` |
+| `ctx.theme.get(name)` | function | resolves a named style to a `{ fg, bg, bold, italic, ... }` table (the same as `yuke.tui.theme.get`); mirrors `style` lookups so a paint callback can read styles |
+| `ctx.message_count` | integer | (paint only) the number of messages available to this paint call |
+| `ctx.messages()` | function | (paint only) returns an array of message view-models: `{ id, role, text, reasoning, tool_calls, tool_call_id, streaming }` |
+| `ctx.message(i)` | function | (paint only) returns the 1-based indexed message, or `nil` |
+
+The `ctx.message_count` / `ctx.messages()` / `ctx.message(i)` triplet is only
+attached to a paint callback's `ctx`; other handlers do not see it. A paint
+leaf that does not read messages pays nothing: the arrays are built on the
+first call, not eagerly.
 
 ---
 
@@ -118,15 +138,21 @@ from keymaps, commands, and hooks; they update local UI state and / or send a
 
 | Action | Maps to | Notes |
 |---|---|---|
-| `actions.send()` | `EngineCommand::UserMessage` | sends the composer as a user turn; queues if a turn is in flight |
+| `actions.send(text?)` | `EngineCommand::UserMessage` | sends the given text, or the composer's contents when omitted; queues if a turn is in flight. Explicit text leaves the composer untouched. |
 | `actions.cancel()` | `EngineCommand::Cancel` | interrupt the in-flight turn |
-| `actions.set_model(name)` | model switch on next `UserMessage` | sticky; errors surface as a `turn_error` event |
+| `actions.set_model(name)` | model switch on next send | sticky; an identical value clears any staged switch |
 | `actions.set_reasoning(level)` | reasoning switch | must be offered by the active model |
-| `actions.set_permission_mode(mode)` | `EngineCommand::SetPermissionMode` | `"strict"` \| `"normal"` \| `"yolo"`; an unknown mode surfaces a notice |
-| `actions.notify(message)` | transient footer notice | the same as `yuke.tui.notify` |
+| `actions.set_permission_mode(mode)` | `EngineCommand::SetPermissionMode` | `"strict"` \| `"normal"` \| `"yolo"`; an unknown mode errors at the call site |
+| `actions.set_max_rounds(n?)` | `EngineCommand::SetMaxRounds` | `n > 0` sets the per-turn round cap live; `nil` or non-positive means unlimited |
+| `actions.eval(code)` | `EngineCommand::Eval` | run an arbitrary Lua snippet against the session's engine VM (requires the session's `allow_eval` opt); the result returns as an `eval_result` event |
+| `actions.permit(id, allow, remember?)` | answers the pending tool-permission prompt | `id` is accepted for forward compatibility; the app tracks one prompt at a time, so it answers that one. `remember` defaults to `false`. |
 | `actions.attach(id)` | focus a session by id | fetch `History`, start reconciling its firehose |
-| `actions.new_session()` | `CreateSession` | a session in the launch workspace |
-| `actions.run_command(name)` | run a registered client command | invokes the command registered via `yuke.tui.cmd.register` |
+| `actions.new_session(opts?)` | `CreateSession` | `opts`: `{ path?, profile?, model?, reasoning?, system?, permission? }`. Missing fields fall back to the launch workspace and current defaults. |
+| `actions.remove_session(id)` | `RemoveSession` | close the session on the daemon side |
+| `actions.open_workspace(path)` | `CreateWorkspace` | open (or find) a workspace by filesystem path |
+| `actions.remove_workspace(id)` | `RemoveWorkspace` | close the workspace and every session under it |
+| `actions.run_command(name, args?)` | run a registered client command | invokes the command registered via `yuke.tui.cmd.register`; `args` is a Lua array of positional strings, each surfaced as `args[i]` to the handler |
+| `actions.focus(region)` | move UI focus | `region` is one of the region ids Lua reads as `ctx.focus` (`"composer"`, `"transcript"`, an overlay id) |
 
 ### Composer (local edits)
 
@@ -135,11 +161,14 @@ The composer's cursor and buffer are local UI state — no daemon round-trip.
 | Action | Effect |
 |---|---|
 | `actions.composer.newline()` | insert a literal newline (the composer is multiline) |
+| `actions.composer.insert(text)` | insert text at the cursor, honoring embedded newlines (a paste) |
+| `actions.composer.set(text)` | replace the composer buffer with `text`, cursor at the end |
+| `actions.composer.clear()` | empty the composer buffer and drop any in-flight history recall |
 | `actions.composer.move(where)` | `"left"` \| `"right"` \| `"word_left"` \| `"word_right"` \| `"home"` \| `"end"` \| `"up"` \| `"down"` (readline-style) |
 | `actions.composer.delete(kind)` | `"char_back"` \| `"char"` \| `"word_back"` \| `"word"` \| `"line"` \| `"to_end"` \| `"to_start"` (readline-style) |
 | `actions.composer.motion(m)` | vim motion: `"h"` \| `"l"` \| `"j"` \| `"k"` \| `"0"` \| `"^"` \| `"$"` \| `"w"` \| `"W"` \| `"b"` \| `"B"` \| `"e"` \| `"E"` \| `"gg"` \| `"G"` (the modal editor's cursor, only used under `opts.vim = true`) |
-| `actions.composer.op(operator, motion)` | vim operator over a motion: `operator` in `"d"` \| `"c"` \| `"y"`, e.g. `op("d", "w")`; doubled (`"dd"`, `"cc"`, `"yy"`) operates on the line |
-| `actions.composer.edit(e)` | one-key vim edits: `"x"` \| `"X"` \| `"D"` \| `"p"` \| `"P"` \| `"u"`, plus the insert-entry keys `"a"` \| `"A"` \| `"I"` \| `"o"` \| `"O"` \| `"C"` (which enter insert) |
+| `actions.composer.op(operator, motion)` | vim operator over a motion: `operator` in `"d"` \| `"c"` \| `"y"`, e.g. `op("d", "w")`; doubled (`"dd"`, `"cc"`, `"yy"`) operates on the line. The `c` operator leaves the cursor in insert mode. |
+| `actions.composer.edit(e)` | one-key vim edits: `"x"` \| `"X"` \| `"D"` \| `"p"` \| `"P"` \| `"u"`, `"redo"`, plus the insert-entry keys `"a"` \| `"A"` \| `"I"` \| `"o"` \| `"O"` \| `"C"` (which enter insert). `"u"` undoes; `"redo"` re-applies a previously undone edit. |
 | `actions.composer.history(dir)` | recall submitted inputs: `"prev"` \| `"next"` |
 
 The motion / op / edit verbs exist so a custom `normal`-mode keymap can drive
@@ -153,19 +182,17 @@ usual keys. They are no-ops when `opts.vim = false`.
 | `actions.scroll(delta)` | scroll the transcript by `delta` rows (negative = up) |
 | `actions.scroll_to(where)` | `"top"` \| `"bottom"` |
 | `actions.mode(name)` | switch key mode |
-| `actions.picker(kind)` | open a built-in picker: `"model"` \| `"reasoning"` \| `"session"` \| `"command"` |
+| `actions.notify(text)` | transient footer notice (the same as `yuke.tui.notify`) |
 | `actions.back()` | return to the dashboard / session picker |
 | `actions.redraw()` | request a repaint (a no-op; a redraw follows every event) |
 | `actions.quit()` | tear down and exit |
+| `actions.reload()` | re-run bundled + user `init.lua`, rebuilding the Lua runtime |
 
-### Stub verbs (load without error)
+### Stub verb
 
-The bundled default and common configs reference a few verbs that the current
-build accepts as no-ops so configs load without error. They are reserved for
-upcoming increments:
+A single verb is a no-op so configs that reference it still load:
 
-`eval`, `open_workspace`, `remove_session`, `remove_workspace`, `permit`,
-`focus`, `run_daemon_command`.
+- `actions.run_daemon_command` — awaits the daemon's command surface.
 
 ---
 
@@ -185,26 +212,29 @@ yuke.tui.keymap.set("*",      "<C-q>", function() yuke.tui.actions.quit() end)  
 
 | Function | Signature | Notes |
 |---|---|---|
-| `keymap.set(mode, lhs, rhs, opts?)` | `mode: string, lhs: string, rhs: function, opts?: table` | `rhs` receives `ctx` |
+| `keymap.set(mode, lhs, rhs, opts?)` | `mode: string, lhs: string, rhs: function, opts?: table` | `rhs` receives `ctx`. `opts.desc` records a one-line description for `keymap.list` (a which-key view). |
 | `keymap.del(mode, lhs)` | | remove a binding |
-| `keymap.list(...)` | | stub (returns an empty table) |
+| `keymap.list(scope?)` | | return an array of `{ mode, lhs, desc }` rows for one mode, or every mode when `scope` is `nil` |
 
-**Modes**: at least `"insert"` (typing into the composer) and `"normal"`
-(navigation). `"*"` binds in all modes. The bundled default uses a `dashboard`
-mode for the startup screen. Lua may define more modes and switch with
-`actions.mode(name)`.
+**Modes**: at boot the app is in `"dashboard"`; on attach it transitions to
+`opts.start_mode` (default `"insert"`). `"normal"` is reachable with `<Esc>`
+under `opts.vim = true`. `"*"` binds in all modes. Lua may define more modes
+and switch with `actions.mode(name)`.
 
 **Chord syntax** matches the daemon-adjacent convention: printable keys bare
 (`j`, `G`), modifiers bracketed (`<C-x>`, `<M-x>`, `<S-Tab>`, `<CR>`, `<Esc>`,
 `<BS>`, `<Tab>`, `<Up>`, `<F5>`). Multi-key chords (`gg`, `<leader>q`) are
-supported with a pending-chord timeout.
+supported with a pending-chord timeout (outside `"insert"`; insert mode
+dispatches single chords only so a literal `<` typed into the composer is
+never read as the start of a `<C-x>` chord).
 
 ---
 
 ## yuke.tui.layout
 
-Declare the region tree for the single-session view. Leaves are built-in
-widgets (by name) or paint handles. Install the tree with `set_root`.
+Declare the region tree for a view. Leaves are built-in widgets (by name) or
+paint handles. Install the session-view tree with `set_root` and the
+dashboard tree with `set_dashboard`.
 
 ```lua
 local L = yuke.tui.layout
@@ -219,25 +249,42 @@ yuke.tui.set_root(
 
 | Node | Signature | Notes |
 |---|---|---|
-| `L.rows{ ... }` | children stacked top-to-bottom | a.k.a. horizontal split |
-| `L.cols{ ... }` | children left-to-right | a.k.a. vertical split |
+| `L.rows{ ... }` | children stacked top-to-bottom | a.k.a. vertical split |
+| `L.cols{ ... }` | children left-to-right | a.k.a. horizontal split |
 | `L.leaf(widget, opts?)` | `widget: string \| PaintHandle` | a built-in name or a `paint.register` handle |
-| `yuke.tui.set_root(node)` | install / replace the root | call again to swap the whole UI |
+| `yuke.tui.set_root(node)` | install / replace the session view | call again to swap the whole UI |
+| `yuke.tui.set_dashboard(node)` | install / replace the dashboard | the screen shown before a session is attached; defaults to the bull-logo layout |
 
 **Sizing opts** on any child: `size` (fixed rows / cols), `grow` (flex weight,
-default `1` when no `size`), `min`, `max`, `fit` (collapse when content is
-empty).
+default `1` when no `size`), `min`, `max`, `fit` (collapse to a natural
+content extent, queried from the app).
+
+**Border opts** on any child: a charset string (`"rounded"` \| `"double"` \|
+`"thick"` \| `"single"`), `true` / `false` to inherit / drop, or a
+`{ type, sides, style, title }` table. Each field is optional; missing fields
+inherit from `opts.border` (the global default).
+
+| Border field | Type | Notes |
+|---|---|---|
+| `type` | string | one of `"rounded"` (default), `"double"`, `"thick"`, `"single"` |
+| `sides` | string | `"all"` (default), `"top"`, `"bottom"`, `"left"`, `"right"`, `"none"` |
+| `style` | string | a theme style name for the line; defaults to the `"border"` style |
+| `title` | string | a title shown in the top edge |
+
+**Padding opts** on any child: a scalar (all four sides), or a
+`{ top, right, bottom, left }` table with `x` / `y` shorthands.
 
 **Built-in widgets** (Rust-implemented leaves; each is replaceable by a paint
 handle):
 
 | Name | Renders |
 |---|---|
+| `"statusline"` | session title, model, reasoning, permission mode, turn / queued / connection state |
 | `"transcript"` | the scrolling conversation: user / assistant / tool blocks, **live token streaming** (text and reasoning), tool calls and results |
 | `"composer"` | the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs |
-| `"statusline"` | session title, model, reasoning, permission mode, turn / queued / connection state |
 | `"working"` | the spinner + `opts.working_label` + elapsed time while a turn runs; collapses to zero height when idle (give it `{ fit = true }`) |
 | `"footer"` | the mode / hint line plus any transient notice |
+| `"logo"` | the bull logo, the live session count, and the entry hints (dashboard only) |
 
 ---
 
@@ -255,7 +302,7 @@ local hud = yuke.tui.paint.register(function(slice, ctx)
     { " " .. (s and s.model or "no session") .. " ", "statusline.model" },
     { ctx.turn.active and "  ● streaming" or "", "accent" },
   })
-end, { /* options reserved for future use */ })
+end)
 
 -- a paint handle is usable anywhere a widget name is:
 yuke.tui.set_root(yuke.tui.layout.rows {
@@ -276,13 +323,13 @@ error.
 | `slice.width`, `slice.height` | leaf dimensions in cells |
 | `slice:set(col, row, ch, style?)` | one cell; `ch` is a string (only the first character is used) |
 | `slice:put(col, row, text, style?) -> width` | text from `(col, row)`, returns columns advanced (unicode-width aware), clipped to the leaf |
-| `slice:line(row, spans)` | a styled line: `spans` is `{ { text, style }, ... }` |
-| `slice:fill(rect?, ch?, style?)` | fill a sub-rect (or the whole leaf) |
+| `slice:line(row, spans)` | a styled line: `spans` is `{ { text, style }, ... }`. Each span may be a positional `{ text, style }` (1-based) or a `{ text = ..., style = ... }` table. |
+| `slice:fill(rect?, ch?, style?)` | fill a sub-rect (or the whole leaf) with `ch` (default `" "`) and `style` |
 | `slice:clear()` | reset the leaf to the theme background |
 
 `style` is either a **theme style name** (string, e.g. `"assistant"`,
-`"border"`) or an inline table (see `yuke.tui.theme`). `rect` is
-`{ col, row, width, height }`.
+`"border"`) or an inline `{ fg, bg, bold, italic, ... }` table (see
+`yuke.tui.theme`). `rect` is `{ col, row, width, height }`.
 
 ### Handle
 
@@ -323,10 +370,10 @@ yuke.tui.theme.set {
 
 | Function | Notes |
 |---|---|
-| `theme.set(spec)` | `spec`: `{ palette, styles }`; merges over the current theme |
-| `theme.use(name)` | stub (loads a bundled colorscheme when the surface lands) |
-| `theme.get(name)` | stub |
-| `theme.list()` | stub |
+| `theme.set(spec)` | `spec`: `{ palette, styles }`; merges over the current theme. Unknown color specs are ignored, so a typo doesn't blow away the palette. |
+| `theme.use(name)` | switch to a bundled colorscheme: `"default"` (the shipped look) or `"yuke-dark"`. Unknown names error with the available list. |
+| `theme.list()` | the bundled colorscheme names |
+| `theme.get(name)` | resolve a named style to a concrete `{ fg, bg, bold, ... }` table (or `nil` for unset fields) |
 
 **Style table** fields: `fg`, `bg` (a `#rrggbb`, a palette key, a named
 terminal color, or `"none"` to clear), and the booleans `bold`, `italic`,
@@ -334,11 +381,63 @@ terminal color, or `"none"` to clear), and the booleans `bold`, `italic`,
 
 ---
 
+## yuke.tui.transcript
+
+Settings for the built-in `transcript` widget. Set each field with a single
+assignment; an unknown field errors at that line, mirroring `yuke.tui.opts`.
+
+```lua
+yuke.tui.transcript.gap       = 1                  -- blank rows between messages
+yuke.tui.transcript.labels    = { user = "you", assistant = "assistant" }
+yuke.tui.transcript.reasoning = "show"             -- "show" | "collapse" | "hide"
+yuke.tui.transcript.highlight = function(message)
+  -- return a theme style name (or nil) to paint the message's card background
+  if message.streaming then return "selection" end
+end
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `gap` | integer | blank separator rows between messages (default `1`) |
+| `labels` | table | `{ user = <string>, assistant = <string> }`; either side may be omitted to keep the current label |
+| `reasoning` | string | `"show"` (label + body, default), `"collapse"` (label only), or `"hide"` |
+| `highlight` | function \| nil | called per message with `{ role, text, streaming }`; return a theme style name (or `nil`) to paint that message's full-width card background. A broken hook is ignored for the line. |
+
+---
+
+## yuke.tui.format
+
+Override how the transcript renders tool-call lines and tool-result bodies.
+Assign a function to one of the two fields; the built-in summary returns when
+the field is `nil` or the function returns `nil`. A formatter error renders
+as a visible notice (`⚠ format.tool_call error: ...`) in place of the line,
+so a broken formatter is obvious without spamming the action queue on every
+redraw.
+
+```lua
+yuke.tui.format.tool_call = function(call)
+  -- call: { id, name, arguments, running }
+  return string.format("[%s] %s(%s)", call.name, call.name, call.arguments)
+end
+
+yuke.tui.format.tool_result = function(result)
+  -- result: { name, content, lines, chars }
+  return string.format("⮑ %s (%d lines)", result.name, result.lines)
+end
+```
+
+| Field | Signature | Default | Notes |
+|---|---|---|---|
+| `tool_call` | `(call) -> string?` | `"→ name(args…)"` with a blinking `"●"` while running | `call`: `{ id, name, arguments, running }` |
+| `tool_result` | `(result) -> string?` | `⮑ name first-line (+N more lines)` | `result`: `{ name, content, lines, chars }`; `name` is the originating tool when known |
+
+---
+
 ## yuke.tui.on
 
 Subscribe to events. Handlers receive `(payload, ctx)` and may call actions.
-The `turn_error` and `disconnect` events are surfaced by the bundled default
-as transient notices.
+The bundled default surfaces failures and connection loss as transient
+notices; a user config can replace or supplement them.
 
 ```lua
 yuke.tui.on("turn_error", function(payload)
@@ -346,15 +445,31 @@ yuke.tui.on("turn_error", function(payload)
 end)
 ```
 
+The full event catalogue:
+
 | Event | Payload | Source |
 |---|---|---|
-| `turn_error` | `{ code, message, timing }` | `EngineEvent::Error` |
+| `connect` | `{}` | `ServerMessage::Hello` — first connect, or after a reconnect |
 | `disconnect` | `{}` | the daemon socket dropped (the manager reconnects in the background) |
+| `message` | `{ role, text, client? }` | a committed user, assistant, or tool message. `client` is the originating client name on user messages. |
+| `tool_call` | `{ id, name, arguments }` | the model invoked a tool |
+| `permission_request` | `{ id, name, arguments }` | a tool is asking the user for approval; the bundled default draws a modal |
+| `turn_done` | `{ rounds }` | the turn ended (assistant produced `Done`) |
+| `turn_canceled` | `{}` | the turn was canceled mid-flight |
+| `turn_error` | `{ message, code }` | `EngineEvent::Error`; the bundled default notifies |
+| `model_changed` | `{ model }` | the session's model switched |
+| `reasoning_changed` | `{ reasoning }` | the session's reasoning level switched |
+| `permission_mode_changed` | `{ permission }` | the session's permission mode switched |
+| `max_rounds_changed` | `{ max_rounds }` | the per-turn round cap was set; `0` means unlimited |
+| `queued` | `{ position }` | a queued user message was added |
+| `queue_canceled` | `{ id }` | a queued user message was canceled before it ran |
 
-The full event catalogue (text deltas, tool calls, paste, focus, resize, etc.)
-is on the design plan; the current build wires the two the bundled default
-listens to. `yuke.tui.on(event, fn)` accepts any event name and records the
-handler; unknown events still fire the handler at the next opportunity.
+High-frequency events (per-token text deltas, per-tool-call lifecycle
+internals) are not surfaced to Lua — the per-message hooks fire once per
+committed message.
+
+`yuke.tui.on(event, fn)` accepts any event name and records the handler;
+unknown events still fire the handler at the next opportunity.
 
 ---
 
@@ -363,12 +478,13 @@ handler; unknown events still fire the handler at the next opportunity.
 Client-side command-palette commands. A `yuke.tui.cmd` runs in the TUI client
 and drives the UI; it is not the daemon's `yuke.on` (the lifecycle hooks that
 run in the engine, between turns). Invoke from a keymap (e.g. `:` in the
-vim default) or from your own picker.
+vim default), from `yuke.tui.actions.run_command(name, args?)`, or from the
+built-in command picker (`yuke.tui.picker("command")`).
 
 ```lua
 yuke.tui.cmd.register("new", {
   desc    = "new session",
-  handler = function(_args, _ctx)
+  handler = function(args, _ctx)
     yuke.tui.actions.new_session()
   end,
 })
@@ -377,7 +493,7 @@ yuke.tui.cmd.register("new", {
 | Field | Type | Notes |
 |---|---|---|
 | `desc` | string | shown in the command picker |
-| `handler` | `function(args, ctx)` | `args` is an empty table in the current build; `ctx` is the read-only state table |
+| `handler` | `function(args, ctx)` | `args` is the array of positional strings the caller passed to `actions.run_command` (a 1-based Lua array; an empty table when called from a keymap); `ctx` is the read-only state table |
 
 Every registered command shows up in `ctx.commands` (as `{ name, desc }`),
 which the bundled command-palette picker uses as its source.
@@ -386,9 +502,32 @@ which the bundled command-palette picker uses as its source.
 
 ## yuke.tui.picker
 
-A Telescope-style picker: a fuzzy-filtered list on the left, a preview on
-the right. Rust runs the filter, selection, overlay, and the live
-conversation preview; Lua owns the data, formatting, preview, and the action.
+A picker is either **built-in** (open by kind) or **custom** (a Telescope-style
+spec). Both forms take the same overlay: a fuzzy-filtered list on the left
+with a preview on the right or below. Rust runs the filter, selection,
+overlay, and the live conversation preview; Lua owns the data, formatting,
+preview, and the action.
+
+### Built-in: `yuke.tui.picker(kind)`
+
+A string opens a built-in picker of that kind:
+
+| Kind | Source | On select |
+|---|---|---|
+| `"session"` | `ctx.sessions` (fuzzy on the title) with a live conversation preview | attach |
+| `"model"` | `ctx.models` (fuzzy on the full `name`) with a static text preview | stage a model switch for the next send |
+| `"reasoning"` | the active model's `reasoning_levels` (no preview) | stage a reasoning switch for the next send |
+| `"command"` | `ctx.commands` with the command's `desc` as preview | run the command |
+
+```lua
+yuke.tui.keymap.set("*", "<C-o>", function(ctx)
+  yuke.tui.picker("model")
+end)
+```
+
+### Custom: `yuke.tui.picker(spec)`
+
+A table is a custom spec, stored and routed through its `on_select` on `Enter`.
 
 ```lua
 yuke.tui.keymap.set("dashboard", "s", function(ctx)
@@ -406,16 +545,17 @@ end)
 
 | Field | Type | Notes |
 |---|---|---|
-| `source` | array \| `function() -> array` | the items; built-in data comes off `ctx` (e.g. `ctx.sessions`, `ctx.models`, `ctx.commands`) |
+| `source` | array \| `function() -> array` | the items; built-in data comes off `ctx` (e.g. `ctx.sessions`, `ctx.models`, `ctx.workspaces`, `ctx.profiles`, `ctx.commands`) |
 | `format` | `function(item) -> string` | the row label; defaults to `tostring(item)` |
 | `match` | `function(item) -> string` | the fuzzy-match key; defaults to `format` |
-| `preview` | `true` \| `"conversation"` \| `function(item, slice, ctx)` \| `false` / `nil` | the preview content: `true` / `"conversation"` stream `item.id`'s live conversation; a function paints the pane (a `slice`, as in `paint`); `false` / `nil` shows none |
-| `on_select` | `function(item, ctx)` | runs on Enter; call `actions.*` to act |
+| `preview` | `true` \| `"conversation"` \| `function(item, slice, ctx)` \| `false` / `nil` | the preview content: `true` / `"conversation"` stream `item.id`'s live conversation (the item must be a table with an `id`); a function paints the pane (a `slice`, as in `paint`); `false` / `nil` shows none |
+| `on_select` | `function(item, ctx)` | runs on `Enter`; call `actions.*` to act |
 | `title` | string | overlay title |
 | `layout` | preset name \| table | the layout (see below); defaults to `"default"` |
 
 Keys inside a picker: type to filter, `↑` / `↓` / `^p` / `^n` move, `Enter`
-selects, `Esc` dismisses.
+selects, `Esc` dismisses. The mouse wheel also moves the highlight while a
+picker is open.
 
 ### Layouts
 
@@ -448,6 +588,11 @@ layout = { position = "bottom", width = 1.0, height = 0.3, preview = false }
 | `preview_ratio` | number (0..1) | fraction of the box given to the preview pane |
 | `prompt` | `"top"` \| `"bottom"` | filter-line position within the results pane |
 
+The renderer adapts the preview placement to the box size: a side preview
+that is too narrow flips below (or drops), a bottom preview that is too short
+flips beside (or drops), so neither pane becomes unusable at small terminal
+sizes.
+
 ---
 
 ## yuke.tui.overlay
@@ -459,14 +604,14 @@ the permission prompt. A custom picker is just an `overlay.open` over a
 ```lua
 local ov = yuke.tui.overlay.open(
   yuke.tui.layout.leaf(my_paint_handle),
-  { anchor = "center", width = 60, height = 12, border = true, title = "Details" }
+  { anchor = "center", width = 60, height = 12, border = true, title = "Details", mode = "modal" }
 )
 -- ov:close()
 ```
 
 | Function | Notes |
 |---|---|
-| `overlay.open(node, opts) -> handle` | `opts`: `anchor` (`"center"` \| `"top"` \| `"bottom"`), `width`, `height`, `border`, `title` |
+| `overlay.open(node, opts) -> handle` | `opts`: `anchor` (`"center"` \| `"top"` \| `"bottom"`, default `"center"`), `width`, `height` (cells; default to 60% of the screen width and half the height), `border` (bool), `title` (string), `mode` (string; a key mode to push while the overlay is open, restored on close) |
 | `handle:close()` | dismiss the overlay |
 
 ---
@@ -477,7 +622,8 @@ local ov = yuke.tui.overlay.open(
 |---|---|
 | `yuke.tui.notify(text)` | transient footer notice (the same as `actions.notify`) |
 | `yuke.tui.redraw()` | request a repaint (a no-op; a redraw follows every event) |
-| `yuke.tui.reload()` | stub (re-run bundled + user `init.lua`) |
+| `yuke.tui.reload()` | re-run bundled + user `init.lua` (the same as `actions.reload`) |
+| `yuke.tui.log(...)` | append a line to the TUI's debug log (`~/.yuke/tui.log`). A full-screen app cannot log to stderr, so it goes to a file; failures are swallowed since this is a best-effort diagnostic. Multiple arguments are joined with spaces. |
 | `yuke.tui.version` | the TUI version string |
 
 ---
@@ -507,14 +653,11 @@ yuke.tui.set_root(yuke.tui.layout.rows {
 })
 
 yuke.tui.keymap.set("*", "<C-o>", function(ctx)
-  yuke.tui.picker {
-    title     = " model ",
-    layout    = "simple",
-    source    = ctx.models,
-    format    = function(m) return (m.name:gsub("^.*/", "")) end,
-    match     = function(m) return m.name end,
-    on_select = function(m) yuke.tui.actions.set_model(m.name) end,
-  }
+  yuke.tui.picker("model")
+end)
+
+yuke.tui.on("turn_error", function(payload)
+  yuke.tui.notify(payload.message)
 end)
 ```
 
@@ -529,4 +672,4 @@ yuke-tui ws://host:port/ws                # full URL form
 The CLI argument overrides `opts.daemon`. The client never blocks on
 connection: if the daemon is down, the manager retries in the background and
 the UI runs in a disconnected state. The first successful connect marks the
-UI connected.
+UI connected and fires the `connect` event.
