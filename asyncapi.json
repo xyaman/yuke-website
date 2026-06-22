@@ -1,0 +1,1876 @@
+{
+  "asyncapi": "3.0.0",
+  "channels": {
+    "root": {
+      "address": "/",
+      "description": "Single persistent channel. On connect the daemon pushes Hello; DaemonEvents follow as they happen. The client may send ClientMessages at any time.",
+      "messages": {
+        "ClientMessage": {
+          "$ref": "#/components/messages/ClientMessage"
+        },
+        "ServerMessage": {
+          "$ref": "#/components/messages/ServerMessage"
+        }
+      }
+    }
+  },
+  "components": {
+    "messages": {
+      "ClientMessage": {
+        "payload": {
+          "$ref": "#/components/schemas/ClientMessage"
+        }
+      },
+      "ServerMessage": {
+        "payload": {
+          "$ref": "#/components/schemas/ServerMessage"
+        }
+      }
+    },
+    "schemas": {
+      "AgentEvent": {
+        "description": "An event emitted by [`Agent::run`]. Owned, so a handler can store or serialize it past the `emit` call.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Incremental assistant text.",
+            "properties": {
+              "TextDelta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "TextDelta"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Incremental assistant reasoning (\"thinking\").",
+            "properties": {
+              "ReasoningDelta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ReasoningDelta"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Reasoning finished: the model stopped thinking and began answering (or calling tools). Carries the wall-clock interval it thought, so a frontend can show \"thought for Ns\" the moment thinking ends.",
+            "properties": {
+              "ReasoningDone": {
+                "$ref": "#/components/schemas/TimeSpan"
+              }
+            },
+            "required": [
+              "ReasoningDone"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The assistant turn, assembled and appended to the conversation.",
+            "properties": {
+              "AssistantMessage": {
+                "$ref": "#/components/schemas/Message"
+              }
+            },
+            "required": [
+              "AssistantMessage"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A tool call about to run (after approval, if any).",
+            "properties": {
+              "ToolCall": {
+                "$ref": "#/components/schemas/ToolCall"
+              }
+            },
+            "required": [
+              "ToolCall"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A finished (or denied) tool call, with its output fed back.",
+            "properties": {
+              "ToolResult": {
+                "properties": {
+                  "message": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    ],
+                    "description": "Exact tool-result message recorded in the conversation."
+                  },
+                  "name": {
+                    "description": "Tool name.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message",
+                  "name"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "ToolResult"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Final answer reached (no more tool calls).",
+            "properties": {
+              "Done": {
+                "properties": {
+                  "rounds": {
+                    "description": "Rounds taken to reach the answer.",
+                    "format": "uint",
+                    "minimum": 0.0,
+                    "type": "integer"
+                  },
+                  "stop_reason": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/StopReason"
+                      }
+                    ],
+                    "description": "Why generation stopped."
+                  }
+                },
+                "required": [
+                  "rounds",
+                  "stop_reason"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Done"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ClientInfo": {
+        "description": "Identifies the frontend that created a session: its product name and version.\n\nEvery client sends this on [`ClientMessage::CreateSession`]; it is persisted with the session and rides on [`SessionInfo::created_by`], so any client (and a restart) can tell which frontend opened a given session.",
+        "properties": {
+          "name": {
+            "description": "Frontend product name, e.g. `\"yuke-cli\"` or `\"yuke-tui\"`.",
+            "type": "string"
+          },
+          "version": {
+            "description": "Frontend version string, e.g. its crate or package version.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "type": "object"
+      },
+      "ClientMessage": {
+        "description": "A message a client sends to the daemon.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Opens (or finds) the workspace rooted at `path`; the daemon canonicalizes the path and broadcasts a [`DaemonEvent::WorkspaceCreated`].",
+            "properties": {
+              "CreateWorkspace": {
+                "properties": {
+                  "path": {
+                    "description": "Filesystem path of the workspace root.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "CreateWorkspace"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Creates a session whose cwd is the workspace at `path`, opening that workspace first if it is new; broadcasts a [`DaemonEvent::SessionCreated`].",
+            "properties": {
+              "CreateSession": {
+                "properties": {
+                  "client": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ClientInfo"
+                      }
+                    ],
+                    "description": "The frontend creating the session, recorded as its creator."
+                  },
+                  "config": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/SessionConfig"
+                      }
+                    ],
+                    "description": "What to build the session from."
+                  },
+                  "path": {
+                    "description": "Filesystem path of the workspace the session runs in.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "client",
+                  "config",
+                  "path"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "CreateSession"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Requests one session's full message backlog; answered by [`ServerMessage::History`].",
+            "properties": {
+              "History": {
+                "properties": {
+                  "session": {
+                    "description": "Session whose backlog to fetch.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "History"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Routes an [`EngineCommand`] to a session's engine.",
+            "properties": {
+              "Command": {
+                "properties": {
+                  "command": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/EngineCommand"
+                      }
+                    ],
+                    "description": "The command to deliver to that session's engine."
+                  },
+                  "session": {
+                    "description": "Session to drive.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "command",
+                  "session"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Command"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Fetches one media blob's bytes by content hash, for a client rendering media a message references; answered by [`ServerMessage::Blob`].",
+            "properties": {
+              "Blob": {
+                "properties": {
+                  "hash": {
+                    "description": "Content hash of the blob to fetch (as carried on a message's media ref).",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "hash"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Blob"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Re-scans the daemon's profiles and answers with [`ServerMessage::Profiles`]. The `Hello` snapshot already carries the list at connect time; this refreshes it without reconnecting, so a profile added on disk after connect shows up.",
+            "enum": [
+              "ListProfiles"
+            ],
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Deletes a session; broadcasts a [`DaemonEvent::SessionRemoved`].",
+            "properties": {
+              "RemoveSession": {
+                "properties": {
+                  "session": {
+                    "description": "Session to delete.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "RemoveSession"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Deletes a workspace and every session under it; broadcasts a [`DaemonEvent::SessionRemoved`] per session, then [`DaemonEvent::WorkspaceRemoved`].",
+            "properties": {
+              "RemoveWorkspace": {
+                "properties": {
+                  "workspace": {
+                    "description": "Workspace to delete.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "workspace"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "RemoveWorkspace"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "ClientMessage"
+      },
+      "Content": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "$ref": "#/components/schemas/ContentPart"
+            },
+            "type": "array"
+          }
+        ]
+      },
+      "ContentPart": {
+        "description": "A single part of a multipart message.",
+        "oneOf": [
+          {
+            "description": "A run of UTF-8 text.",
+            "properties": {
+              "text": {
+                "description": "The text content.",
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "text"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "text",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "An image to show the model.",
+            "properties": {
+              "detail": {
+                "description": "Optional provider detail hint (`low`, `high`, `auto`).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaSource"
+                  }
+                ],
+                "description": "Where the image bytes come from."
+              },
+              "type": {
+                "enum": [
+                  "image"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "An audio clip for audio-input models.",
+            "properties": {
+              "format": {
+                "description": "Audio container format, such as `wav` or `mp3`.",
+                "type": "string"
+              },
+              "source": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaSource"
+                  }
+                ],
+                "description": "Where the audio bytes come from."
+              },
+              "type": {
+                "enum": [
+                  "audio"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "format",
+              "source",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "A file (e.g. a PDF) to attach.",
+            "properties": {
+              "filename": {
+                "description": "Optional original filename, shown to the provider when supported.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaSource"
+                  }
+                ],
+                "description": "Where the file bytes come from."
+              },
+              "type": {
+                "enum": [
+                  "file"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "type"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "DaemonEvent": {
+        "description": "A lifecycle or content event on the daemon's single broadcast stream, sent to every connected client so all frontends share one live view.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "A workspace was opened.",
+            "properties": {
+              "WorkspaceCreated": {
+                "$ref": "#/components/schemas/WorkspaceInfo"
+              }
+            },
+            "required": [
+              "WorkspaceCreated"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A workspace was closed and removed.",
+            "properties": {
+              "WorkspaceRemoved": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "WorkspaceRemoved"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A session was created.",
+            "properties": {
+              "SessionCreated": {
+                "$ref": "#/components/schemas/SessionInfo"
+              }
+            },
+            "required": [
+              "SessionCreated"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A session was removed.",
+            "properties": {
+              "SessionRemoved": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "SessionRemoved"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A session's summary changed (title, message count, model, or permission mode).",
+            "properties": {
+              "SessionUpdated": {
+                "$ref": "#/components/schemas/SessionInfo"
+              }
+            },
+            "required": [
+              "SessionUpdated"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A content event from one session's engine (token deltas, tool calls).",
+            "properties": {
+              "Session": {
+                "properties": {
+                  "event": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/EngineEvent"
+                      }
+                    ],
+                    "description": "The engine event."
+                  },
+                  "id": {
+                    "description": "Session the event came from.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event",
+                  "id"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Session"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EngineCommand": {
+        "description": "A command a frontend sends to the engine.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "A new user message that should drive an assistant turn. `model`, when set, names a catalog entry the session switches to before the turn (and stays on for later turns); `None` keeps the current model.",
+            "properties": {
+              "UserMessage": {
+                "properties": {
+                  "content": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/Content"
+                      }
+                    ],
+                    "description": "The user's content: plain text or multimodal parts."
+                  },
+                  "model": {
+                    "description": "Catalog name to switch to for this and subsequent turns, if any.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "reasoning": {
+                    "description": "Reasoning level to switch to for this and subsequent turns, if any. Must be one the active model offers (after any `model` switch above), else the turn fails with [`ErrorCode::UnsupportedReasoning`].",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "UserMessage"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A response to a pending tool-approval request.",
+            "properties": {
+              "PermissionDecision": {
+                "properties": {
+                  "allow": {
+                    "description": "Whether the call is allowed to run.",
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "description": "Id of the tool call being decided.",
+                    "type": "string"
+                  },
+                  "remember": {
+                    "default": false,
+                    "description": "Whether to remember this answer as an \"allow always\" rule.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "allow",
+                  "id"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "PermissionDecision"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Changes the session's permission mode, effective immediately: a turn already running picks it up at its next tool-call gate.",
+            "properties": {
+              "SetPermissionMode": {
+                "properties": {
+                  "mode": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/PermissionMode"
+                      }
+                    ],
+                    "description": "The mode the session switches to."
+                  }
+                },
+                "required": [
+                  "mode"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "SetPermissionMode"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Cancels the in-flight turn.",
+            "enum": [
+              "Cancel"
+            ],
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Evaluates `code` against the session's scripting VM, answered by an [`EngineEvent::EvalResult`] tagged with the same `id`. Runs serialized with turns: an eval sent mid-turn waits until the turn ends, and while an eval runs nothing else on the session is processed.",
+            "properties": {
+              "Eval": {
+                "properties": {
+                  "code": {
+                    "description": "The snippet to evaluate.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Client-chosen correlation id, echoed on the result.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "id"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Eval"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EngineEvent": {
+        "description": "An event the engine streams back to a frontend: an agent-loop event passed through, or an engine-level signal the agent never produces.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "The user message that started a turn, echoed so every client and the transcript record it through the same path as assistant and tool events.",
+            "properties": {
+              "UserMessage": {
+                "$ref": "#/components/schemas/Message"
+              }
+            },
+            "required": [
+              "UserMessage"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "An event from the agent loop, forwarded unchanged.",
+            "properties": {
+              "Agent": {
+                "$ref": "#/components/schemas/AgentEvent"
+              }
+            },
+            "required": [
+              "Agent"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A tool call awaiting the frontend's approval.",
+            "properties": {
+              "RequestPermission": {
+                "$ref": "#/components/schemas/ToolCall"
+              }
+            },
+            "required": [
+              "RequestPermission"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The session switched to a different catalog model (its new name).",
+            "properties": {
+              "ModelChanged": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ModelChanged"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The session switched to a different reasoning level (its new value).",
+            "properties": {
+              "ReasoningChanged": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ReasoningChanged"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The session's permission mode changed (its new value).",
+            "properties": {
+              "PermissionModeChanged": {
+                "$ref": "#/components/schemas/PermissionMode"
+              }
+            },
+            "required": [
+              "PermissionModeChanged"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A user message accepted while a turn was in flight, held to run after it.",
+            "properties": {
+              "Queued": {
+                "properties": {
+                  "position": {
+                    "description": "1-based slot in the pending-message queue.",
+                    "format": "uint",
+                    "minimum": 0.0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "position"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Queued"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The in-flight turn was canceled by the frontend, with the wall-clock interval it ran before the cancel landed.",
+            "properties": {
+              "Canceled": {
+                "properties": {
+                  "timing": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/TimeSpan"
+                      }
+                    ],
+                    "description": "Interval the turn ran before cancellation."
+                  }
+                },
+                "required": [
+                  "timing"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Canceled"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The turn failed. `code` is the machine-readable category a frontend branches on; `message` is the human-readable description. The `[started_at_ms, ended_at_ms]` interval is how long it ran before failing.",
+            "properties": {
+              "Error": {
+                "properties": {
+                  "code": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ErrorCode"
+                      }
+                    ],
+                    "description": "Machine-readable failure category."
+                  },
+                  "message": {
+                    "description": "Human-readable description.",
+                    "type": "string"
+                  },
+                  "timing": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/TimeSpan"
+                      }
+                    ],
+                    "description": "Interval the turn ran before failure."
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "timing"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Error"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The result of an [`EngineCommand::Eval`], tagged with its correlation id.",
+            "properties": {
+              "EvalResult": {
+                "properties": {
+                  "id": {
+                    "description": "The `id` from the originating [`EngineCommand::Eval`].",
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/EvalOutcome"
+                      }
+                    ],
+                    "description": "What the evaluation produced."
+                  }
+                },
+                "required": [
+                  "id",
+                  "outcome"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "EvalResult"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ErrorCode": {
+        "description": "A machine-readable category for a turn failure, so a frontend can react (retry, reauthenticate, reopen the model picker) without parsing the message.",
+        "oneOf": [
+          {
+            "description": "The turn was canceled by the frontend.",
+            "enum": [
+              "canceled"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The provider rate-limited the request; back off and retry.",
+            "enum": [
+              "rate_limited"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The request timed out; retry.",
+            "enum": [
+              "timeout"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "A network/connectivity failure; retry.",
+            "enum": [
+              "network"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Credentials were missing, invalid, or rejected; fix the API key.",
+            "enum": [
+              "auth"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The selected model is not in the session's catalog; pick another.",
+            "enum": [
+              "unknown_model"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The requested reasoning level is not one the active model supports.",
+            "enum": [
+              "unsupported_reasoning"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The model kept calling tools past the round cap.",
+            "enum": [
+              "max_rounds"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The provider rejected or failed the request.",
+            "enum": [
+              "provider"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "The endpoint's protocol or response stream could not be handled.",
+            "enum": [
+              "protocol"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "An internal failure (I/O, serialization, or an unclassified error).",
+            "enum": [
+              "internal"
+            ],
+            "type": "string"
+          }
+        ]
+      },
+      "EvalOutcome": {
+        "description": "The result of evaluating a snippet against a session's scripting VM.\n\n`Ok` carries the evaluated value (serialized to JSON, falling back to a string representation for values JSON cannot hold) plus anything the snippet printed; `Err` carries the failure message (a load error, a runtime error, or that eval is not enabled for the session).",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "The snippet ran to completion.",
+            "properties": {
+              "Ok": {
+                "properties": {
+                  "output": {
+                    "description": "Captured `print` output, in order, newline-separated.",
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "The returned value as JSON, or a string repr for unserializable values."
+                  }
+                },
+                "required": [
+                  "output",
+                  "value"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Ok"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The snippet failed (or eval is disabled).",
+            "properties": {
+              "Err": {
+                "properties": {
+                  "message": {
+                    "description": "Human-readable failure description.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Err"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "MediaSource": {
+        "description": "Where a media part's bytes come from.",
+        "oneOf": [
+          {
+            "description": "A remote `http(s)` URL or an inline `data:` URL, kept verbatim.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "url"
+                ],
+                "type": "string"
+              },
+              "url": {
+                "description": "The URL, passed to the provider as-is.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "url"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Inline base64-encoded bytes with their MIME type.",
+            "properties": {
+              "data": {
+                "description": "Base64-encoded payload, without a `data:` prefix.",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "base64"
+                ],
+                "type": "string"
+              },
+              "mime": {
+                "description": "MIME type of the data, such as `image/png`.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "data",
+              "kind",
+              "mime"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "A content-addressed reference into the blob store, resolved to inline bytes at send time so the transcript and firehose carry only the ref.",
+            "properties": {
+              "bytes": {
+                "description": "Size of the referenced bytes, for display without loading them.",
+                "format": "uint64",
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              "hash": {
+                "description": "Lowercase hex SHA-256 of the bytes, naming the blob.",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "blob"
+                ],
+                "type": "string"
+              },
+              "mime": {
+                "description": "MIME type of the referenced bytes.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "bytes",
+              "hash",
+              "kind",
+              "mime"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Message": {
+        "description": "One chat message sent to or received from a model.",
+        "properties": {
+          "content": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Content"
+              }
+            ],
+            "description": "Content for this message: plain text or multimodal parts."
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provenance for a received assistant turn; `None` for turns you authored."
+          },
+          "reasoning_content": {
+            "description": "Reasoning content; empty when absent. Saved to JSONL, never re-sent.",
+            "type": "string"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Role"
+              }
+            ],
+            "description": "Speaker role for this message."
+          },
+          "tool_call_id": {
+            "description": "For a `tool` message, the id of the tool call it answers.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tool_calls": {
+            "description": "Tool calls requested by an assistant turn.",
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "content",
+          "role"
+        ],
+        "type": "object"
+      },
+      "Meta": {
+        "description": "Provenance and timing for a received turn. Saved to JSONL, never re-sent.",
+        "properties": {
+          "first_token_at_ms": {
+            "description": "Epoch ms of the first streamed token (text or reasoning) on an assistant turn. Time-to-first-token is measured from `timing.started_at_ms`.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "model": {
+            "description": "Model that produced this turn.",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider that served it (e.g. \"openai\").",
+            "type": "string"
+          },
+          "reasoning_timing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpan"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reasoning interval on an assistant turn."
+          },
+          "stop": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StopReason"
+              }
+            ],
+            "description": "Why generation stopped."
+          },
+          "timing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeSpan"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Complete turn or tool interval."
+          },
+          "usage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              }
+            ],
+            "description": "Token usage for the turn."
+          }
+        },
+        "type": "object"
+      },
+      "ModelInfo": {
+        "description": "One selectable model the daemon advertises, for a client's model picker. Names a catalog entry; carries no endpoint or credentials.",
+        "properties": {
+          "default_reasoning": {
+            "description": "The level a new session starts on for this model (one of `reasoning_levels`), or `None` when the model has no reasoning knob.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Catalog name the client selects this model by.",
+            "type": "string"
+          },
+          "protocol": {
+            "description": "Wire protocol the model's endpoint speaks (for display only).",
+            "type": "string"
+          },
+          "reasoning_levels": {
+            "description": "Reasoning levels this model accepts, lowest to highest, for a client's picker. Empty when the model has no reasoning knob. The set varies by backend (e.g. the Codex backend and the API offer different levels).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "protocol",
+          "reasoning_levels"
+        ],
+        "type": "object"
+      },
+      "PermissionMode": {
+        "description": "How aggressively a session auto-approves tool calls.",
+        "oneOf": [
+          {
+            "description": "Approve everything except a hard deny.",
+            "enum": [
+              "yolo"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Approve unless Lua asks or denies. The default.",
+            "enum": [
+              "normal"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Ask for anything not explicitly allowed.",
+            "enum": [
+              "strict"
+            ],
+            "type": "string"
+          }
+        ]
+      },
+      "Role": {
+        "description": "Role of a message in a chat-style conversation.",
+        "oneOf": [
+          {
+            "description": "System-level instruction.",
+            "enum": [
+              "system"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "User turn.",
+            "enum": [
+              "user"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Assistant turn.",
+            "enum": [
+              "assistant"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Tool result fed back to the model.",
+            "enum": [
+              "tool"
+            ],
+            "type": "string"
+          }
+        ]
+      },
+      "ServerMessage": {
+        "description": "A message the daemon sends to a client.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Sent once on connect: a snapshot of every workspace and session, so a fresh client can render the full tree before the first [`DaemonEvent`].",
+            "properties": {
+              "Hello": {
+                "properties": {
+                  "models": {
+                    "description": "Every model the client may select, from the daemon's catalog.",
+                    "items": {
+                      "$ref": "#/components/schemas/ModelInfo"
+                    },
+                    "type": "array"
+                  },
+                  "profiles": {
+                    "description": "Profiles the client may pick when creating a session, by name. Always includes `\"default\"` (the daemon's `init.lua`), then each `init_<name>.lua`.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "sessions": {
+                    "description": "Every live session.",
+                    "items": {
+                      "$ref": "#/components/schemas/SessionInfo"
+                    },
+                    "type": "array"
+                  },
+                  "workspaces": {
+                    "description": "Every open workspace.",
+                    "items": {
+                      "$ref": "#/components/schemas/WorkspaceInfo"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "models",
+                  "profiles",
+                  "sessions",
+                  "workspaces"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Hello"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Direct reply to [`ClientMessage::CreateSession`], telling the requesting client the id of the session it just created. The broadcast [`DaemonEvent::SessionCreated`] reaches every client and so cannot be attributed to one creator; this ack goes only to the caller.",
+            "properties": {
+              "Created": {
+                "properties": {
+                  "session": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/SessionInfo"
+                      }
+                    ],
+                    "description": "Summary of the newly created session."
+                  }
+                },
+                "required": [
+                  "session"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Created"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "One session's full conversation, answering [`ClientMessage::History`].",
+            "properties": {
+              "History": {
+                "properties": {
+                  "messages": {
+                    "description": "Conversation so far, oldest first.",
+                    "items": {
+                      "$ref": "#/components/schemas/Message"
+                    },
+                    "type": "array"
+                  },
+                  "session": {
+                    "description": "Session the backlog belongs to.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "messages",
+                  "session"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "History"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A broadcast event from the daemon's firehose.",
+            "properties": {
+              "Event": {
+                "properties": {
+                  "event": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/DaemonEvent"
+                      }
+                    ],
+                    "description": "The lifecycle or content event."
+                  }
+                },
+                "required": [
+                  "event"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Event"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "One media blob's bytes, answering [`ClientMessage::Blob`]. The MIME type travels on the message's media reference, so only the bytes are returned.",
+            "properties": {
+              "Blob": {
+                "properties": {
+                  "data": {
+                    "description": "The blob's bytes, base64-encoded.",
+                    "type": "string"
+                  },
+                  "hash": {
+                    "description": "Content hash the bytes were requested by.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "data",
+                  "hash"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Blob"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The current profile list, answering [`ClientMessage::ListProfiles`]. Same shape as `Hello`'s `profiles`, sent only to the requesting client.",
+            "properties": {
+              "Profiles": {
+                "properties": {
+                  "profiles": {
+                    "description": "Profile names, `\"default\"` first.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "profiles"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Profiles"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A transport-level failure (unknown id, malformed frame, bad path), distinct from [`EngineEvent::Error`], a turn failure already in the stream.",
+            "properties": {
+              "Fault": {
+                "properties": {
+                  "message": {
+                    "description": "Human-readable description.",
+                    "type": "string"
+                  },
+                  "session": {
+                    "description": "Session the fault relates to, if any.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "Fault"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "ServerMessage"
+      },
+      "SessionConfig": {
+        "description": "What a client may choose when creating a session.\n\nCarries no credentials: the daemon resolves the endpoint, auth, and tool set from its own trusted config (`~/.yuke/init.lua`), so a remote client never ships a key or Lua. The optional fields override the config's defaults.",
+        "properties": {
+          "max_rounds": {
+            "description": "Caps tool-calling rounds per turn; `None` means unlimited.",
+            "format": "uint",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "model": {
+            "description": "Overrides the config's model id.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "permission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PermissionMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Permission mode for this session; `None` takes the daemon default."
+          },
+          "profile": {
+            "description": "Which profile supplies the base Lua config: `\"<name>\"` loads `~/.yuke/init_<name>.lua`; `None` (or `\"default\"`) loads `~/.yuke/init.lua`. Persisted so a rehydrated session rebuilds on the same profile. If a named profile is later removed, rehydration permanently migrates the session to the default profile. The workspace's `.yuke/init.lua` still overlays on top.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reasoning": {
+            "description": "Forces the session's initial reasoning level. Applied where the chosen model offers it (clamped to the model's default otherwise), then persisted so a rehydrated session restores the same level. `None` takes the model's default.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "system": {
+            "description": "Overrides the config's system prompt.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "SessionInfo": {
+        "description": "A one-line summary of a session, for a client's session picker.",
+        "properties": {
+          "created_by": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ClientInfo"
+              }
+            ],
+            "description": "The frontend that created this session, recorded at create time and kept for the session's life."
+          },
+          "id": {
+            "description": "The session's id.",
+            "type": "string"
+          },
+          "message_count": {
+            "description": "Number of messages accumulated so far.",
+            "format": "uint",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "model": {
+            "description": "Model the session drives turns with.",
+            "type": "string"
+          },
+          "permission": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PermissionMode"
+              }
+            ],
+            "description": "Permission mode the session is currently running in."
+          },
+          "reasoning": {
+            "description": "Reasoning level the session currently drives turns with; `\"\"` when the model has no reasoning knob. Cross-reference [`ModelInfo::reasoning_levels`] for the choices available on the current model.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Display title, derived from the first user message.",
+            "type": "string"
+          },
+          "workspace": {
+            "description": "Workspace this session belongs to.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_by",
+          "id",
+          "message_count",
+          "model",
+          "permission",
+          "reasoning",
+          "title",
+          "workspace"
+        ],
+        "type": "object"
+      },
+      "StopReason": {
+        "description": "Reason a model response stopped.",
+        "oneOf": [
+          {
+            "description": "Natural end.",
+            "enum": [
+              "stop"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Hit the output token limit.",
+            "enum": [
+              "length"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Stopped by a content filter.",
+            "enum": [
+              "content_filter"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Stopped to make tool calls.",
+            "enum": [
+              "tool_calls"
+            ],
+            "type": "string"
+          },
+          {
+            "description": "Unknown or unrecognized stop reason.",
+            "enum": [
+              "unknown"
+            ],
+            "type": "string"
+          }
+        ]
+      },
+      "TimeSpan": {
+        "description": "A completed wall-clock interval in Unix epoch milliseconds.",
+        "properties": {
+          "ended_at_ms": {
+            "description": "Epoch ms when the operation ended.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "started_at_ms": {
+            "description": "Epoch ms when the operation began.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ended_at_ms",
+          "started_at_ms"
+        ],
+        "type": "object"
+      },
+      "ToolCall": {
+        "description": "One tool call requested by the model.",
+        "properties": {
+          "arguments": {
+            "description": "Tool arguments as a raw JSON string, parsed by the caller.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Provider-assigned id, echoed back on the matching tool result.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name of the tool to invoke.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arguments",
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "Usage": {
+        "description": "Token usage reported by a provider.",
+        "properties": {
+          "input": {
+            "default": 0,
+            "description": "Input or prompt tokens.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "output": {
+            "default": 0,
+            "description": "Output or completion tokens.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "total": {
+            "default": 0,
+            "description": "Provider-reported total tokens, when available.",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "WorkspaceInfo": {
+        "description": "A one-line summary of a workspace, for a client's workspace picker.",
+        "properties": {
+          "id": {
+            "description": "The workspace's id.",
+            "type": "string"
+          },
+          "root": {
+            "description": "Canonical absolute path of the workspace root (each session's cwd).",
+            "type": "string"
+          },
+          "title": {
+            "description": "Display title, defaulting to the root directory's name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "root",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "WebSocket protocol between the yuke daemon and its clients. One JSON ClientMessage or ServerMessage per WebSocket text frame.",
+    "title": "yuke daemon",
+    "version": "0.1.0"
+  },
+  "operations": {
+    "receiveServerMessage": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/root"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/root/messages/ServerMessage"
+        }
+      ]
+    },
+    "sendClientMessage": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/root"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/root/messages/ClientMessage"
+        }
+      ]
+    }
+  },
+  "servers": {
+    "daemon": {
+      "description": "Local yuke daemon instance.",
+      "host": "localhost:7878",
+      "protocol": "ws"
+    }
+  }
+}
