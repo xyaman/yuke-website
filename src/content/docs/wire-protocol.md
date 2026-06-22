@@ -207,7 +207,7 @@ applies to the per-session `Agent` content stream.
 ### SessionConfig
 
 The optional fields a client sets when creating a session. Any field left out
-takes the profile's `yuke.opts{}` default.
+takes the profile's `yuke.opts` default.
 
 | field         | type            | notes                                                                                  |
 |---------------|-----------------|----------------------------------------------------------------------------------------|
@@ -243,7 +243,7 @@ session's engine:
 | `PermissionDecision`   | `{ id, allow, remember? }`                                               | reply to a `RequestPermission` engine event                |
 | `SetPermissionMode`    | `{ mode }`                                                               | change the session's mode, effective at the next tool gate |
 | `Cancel`               | `{}`                                                                     | cancel the in-flight turn                                  |
-| `Eval`                 | `{ id, code }`                                                           | evaluate Lua against the session's VM; only enabled when `yuke.opts { allow_eval = true }` |
+| `Eval`                 | `{ id, code }`                                                           | evaluate Lua against the session's VM; only enabled when `yuke.opts.allow_eval = true` |
 
 `remember: true` on `PermissionDecision` persists an "allow always" rule for
 that exact call, so future calls of the same form skip the prompt entirely.

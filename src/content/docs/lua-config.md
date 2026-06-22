@@ -71,10 +71,10 @@ A session's Lua config is built from two layers, run in one VM in order:
    `init_foo.lua`.
 2. **Workspace (overlay)** — the workspace's own `.yuke/init.lua`, if present,
    run after the profile so it can extend or wrap it (e.g. add a
-   project-specific tool or override `yuke.opts{}`).
+   project-specific tool or override `yuke.opts`).
 
-A second `yuke.opts{}` call (e.g. the workspace layer) merges field-by-field
-over the first, so it extends rather than replaces the profile's policy.
+A later `yuke.opts` assignment (e.g. the workspace layer) merges field-by-field
+over the earlier one, so it extends rather than replaces the profile's policy.
 Tools and hooks from both layers register into the same VM.
 
 ---
@@ -86,14 +86,16 @@ the round cap, and a few session-wide switches. All fields are optional. A
 `SessionConfig` from the client overrides these.
 
 ```lua
-yuke.opts {
-    default_model    = "openai/gpt-4o",     -- "provider/model" or bare name
-    prompt           = "You are a helpful assistant.",
-    max_rounds       = 10,
-    reasoning_effort = "medium",            -- session default; applied per model only where its levels include it
-    allow_eval       = false,               -- let clients eval against this session's VM (off by default)
-}
+yuke.opts.default_model    = "openai/gpt-4o"   -- "provider/model" or bare name
+yuke.opts.prompt           = "You are a helpful assistant."
+yuke.opts.max_rounds       = 10
+yuke.opts.reasoning_effort = "medium"          -- session default; applied per model only where its levels include it
+yuke.opts.allow_eval       = false             -- let clients eval against this session's VM (off by default)
 ```
+
+Each field is optional, validated as it is assigned, and a mistyped option
+name errors at that line. Assigning to `yuke.opts` is the only way to set
+policy; calling it (`yuke.opts{ ... }`) is no longer supported.
 
 **`default_model`**: pass `"provider/model"` (e.g. `"openai/gpt-4o"`) or a
 bare model name when it is unambiguous across all providers. An ambiguous
@@ -114,8 +116,8 @@ default**: the snippet has the VM's full machine access (`yuke.exec`,
 reach the daemon. Because it lives in the trusted config, a remote client
 cannot turn it on itself.
 
-A second `yuke.opts{}` call (e.g. the workspace layer) merges over the first,
-overriding only the fields it sets.
+A second `yuke.opts` assignment (e.g. the workspace layer) merges over the
+first, overriding only the fields it sets.
 
 ---
 

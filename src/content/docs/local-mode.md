@@ -102,7 +102,7 @@ saved with.
 yuke --system "You only answer in haiku."
 ```
 
-This overrides the `prompt` from `yuke.opts { ... }` for this session only.
+This overrides the `prompt` from `yuke.opts` for this session only.
 
 ## Auto-approval in oneshot
 

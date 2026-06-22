@@ -144,7 +144,7 @@ backend, since the Codex backend and the OpenAI API accept different levels:
 
 An empty array (`"reasoning_levels": []`) means the model has no reasoning
 knob. A session starts at the **middle** level of the set unless the profile's
-`yuke.opts{ reasoning_effort = ... }` names one the model offers, or a client
+`yuke.opts.reasoning_effort` names one the model offers, or a client
 forces one via `SessionConfig.reasoning` / `--reasoning`. The chosen level is
 saved with the session and clamped to the model's set when the model is
 switched.
