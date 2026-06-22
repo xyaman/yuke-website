@@ -32,7 +32,10 @@ yuke daemon --addr 127.0.0.1:7878 --token secret --idle-ttl 0
 
 A token, when set, is required on every client connection. The daemon accepts
 it from `--token` or, if unset there, the `YUKE_DAEMON_TOKEN` environment
-variable.
+variable. A client presents it on the WebSocket upgrade as
+`Authorization: Bearer <token>` (CLIs) or as a `?token=<secret>` query
+parameter (browsers, since they cannot set headers on a `new WebSocket(...)`).
+The comparison is constant-time.
 
 ## Profiles
 

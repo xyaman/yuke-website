@@ -89,9 +89,10 @@ warning and yields an empty catalog rather than refusing connections.
 
 | field         | type     | default                       | notes                                                                |
 |---------------|----------|-------------------------------|----------------------------------------------------------------------|
-| `name`        | string   | required                      | prefix for catalog keys (`"provider/model"`)                         |
+| `name`        | string   | required                      | prefix for catalog keys (`"provider/model"`); also the `auth.json` lookup key |
 | `base_url`    | string   | `https://api.openai.com/v1`   | base URL of the provider's API                                       |
 | `protocol`    | string   | `"completions"`               | `"completions"` \| `"codex"` \| `"anthropic"`; a model may override it |
+| `api_key_env` | string   | `null`                        | legacy fallback: env-var name holding an API key for this provider, used when no `auth.json` entry exists |
 | `models`      | array    | `[]`                          | models offered under this provider                                   |
 
 The `name` field is also the `auth.json` lookup key.

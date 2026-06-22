@@ -9,39 +9,15 @@ files and `require` them. The model can call them like any other tool.
 
 ## edit (string replacement)
 
-The canonical "update" tool. There is no `yuke.fs.edit` primitive on
-purpose: finding `old` and splicing in `new` is pure string work, so it lives
-in Lua.
-
-> **Footgun:** don't use `string.gsub` here. `gsub` treats its pattern as a
-> Lua pattern (so `.`, `%`, `-`, `(` are special) and its replacement has `%`
-> escaping. For literal source-code edits use `string.find(s, old, 1, true)`
-> (the `true` means a plain/literal search) and splice with `string.sub`.
+The canonical "update" tool, built on the `yuke.fs.edit` primitive. The
+primitive reads the file, replaces the occurrence of `old_string` with
+`new_string`, and rewrites it in place. The match is a **literal substring**
+(no Lua patterns, no regex). `old_string` must match exactly once unless
+`replace_all` is set; a missing, empty, or non-unique match is an error, so
+the model can't silently edit the wrong place. It returns the number of
+replacements made.
 
 ```lua
--- Replace the single occurrence of `old` with `new`. Errors if `old` is
--- missing or appears more than once, unless replace_all is set.
-local function replace(s, old, new, replace_all)
-  local i, j = s:find(old, 1, true)
-  if not i then return nil, "old_string not found" end
-  if not replace_all and s:find(old, j + 1, true) then
-    return nil, "old_string is not unique; add more context or set replace_all"
-  end
-  if replace_all then
-    -- Literal replace of every occurrence, without Lua-pattern surprises.
-    local out, pos = {}, 1
-    while true do
-      local a, b = s:find(old, pos, true)
-      if not a then out[#out + 1] = s:sub(pos); break end
-      out[#out + 1] = s:sub(pos, a - 1)
-      out[#out + 1] = new
-      pos = b + 1
-    end
-    return table.concat(out)
-  end
-  return s:sub(1, i - 1) .. new .. s:sub(j + 1)
-end
-
 yuke.tool {
   name        = "edit",
   description = "Replace an exact string in a file. old_string must be unique "
@@ -53,11 +29,9 @@ yuke.tool {
     replace_all = "boolean?",
   },
   handler = function(args)
-    local content = yuke.fs.read(args.path)
-    local updated, err = replace(content, args.old_string, args.new_string, args.replace_all)
-    if not updated then return "error: " .. err end
-    yuke.fs.write(args.path, updated)
-    return "ok"
+    local n = yuke.fs.edit(args.path, args.old_string, args.new_string,
+      { replace_all = args.replace_all })
+    return "replaced " .. n
   end,
 }
 ```

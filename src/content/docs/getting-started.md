@@ -133,6 +133,9 @@ indexes the store at startup. Any WebSocket client can connect.
 - [Local mode](local-mode/) is the oneshot in depth: profiles, models, output.
 - [Daemon mode](daemon-mode/) covers the WebSocket endpoint, workspaces,
   profiles, and auth tokens.
+- [yuke-tui](tui/) is the interactive terminal client. Its UI is
+  `~/.yuke/tui/init.lua`-scriptable: rebind keys, add sidebars, replace the
+  statusline, register a custom command palette.
 - [Provider catalog](providers/) covers the full `providers.json` schema.
 - [init.lua](lua-config/) is the full API for `init.lua`: session policy,
   tools, hooks.

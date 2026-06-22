@@ -17,8 +17,11 @@ ws://127.0.0.1:7878/ws
 
 The address is configurable on the daemon side with `yuke daemon --addr`. When
 the daemon was started with `--token <secret>` or `YUKE_DAEMON_TOKEN`, the
-client must present it on the WebSocket upgrade (e.g. `Authorization: Bearer
-*** -- see the daemon's startup logs for the exact mechanism in your version.
+client must present it on the WebSocket upgrade — either as
+`Authorization: Bearer <token>` (CLIs) or as a `?token=<secret>` query
+parameter (browsers, since they cannot set headers on a `new WebSocket(...)`).
+The comparison is constant-time, so a valid-length guess learns nothing from
+timing.
 
 ## Channel shape
 
@@ -103,29 +106,36 @@ attributed to one creator; this ack goes only to the caller.
 ### History
 
 Reply to a `ClientMessage::History` request: a list of `Message` objects,
-oldest first.
+oldest first, plus the durable-message watermark the snapshot reflects.
 
 ```json
 {
   "History": {
     "session": "a1b2...",
-    "messages": [ /* Message objects, oldest first */ ]
+    "messages": [ /* Message objects, oldest first */ ],
+    "seq": 14
   }
 }
 ```
 
+`seq` lets a client reconcile the snapshot against the live
+`DaemonEvent::Session` tail: apply the broadcast events at or beyond the
+watermark, in order, and dedupe by message id. A `seq` lower than the next
+broadcast's means the snapshot is stale; the daemon will not re-emit the
+overlap, so the client must dedupe on its own.
+
 ### Event (broadcast)
 
-A live event from the daemon. The variants:
+A live event from the daemon, wrapped in a `DaemonEvent`:
 
-| variant             | payload                              | meaning                                    |
-|---------------------|--------------------------------------|--------------------------------------------|
-| `WorkspaceCreated`  | `WorkspaceInfo`                      | a workspace was opened                     |
-| `WorkspaceRemoved`  | `WorkspaceId`                        | a workspace was closed                     |
-| `SessionCreated`    | `SessionInfo`                        | a session was created                      |
-| `SessionRemoved`    | `SessionId`                          | a session was removed                      |
-| `SessionUpdated`    | `SessionInfo`                        | title or message count changed             |
-| `Session`           | `{ id: SessionId, event: EngineEvent }` | a content event from one session's engine |
+| variant             | payload                                                                                  | meaning                                    |
+|---------------------|------------------------------------------------------------------------------------------|--------------------------------------------|
+| `WorkspaceCreated`  | `WorkspaceInfo`                                                                          | a workspace was opened                     |
+| `WorkspaceRemoved`  | `WorkspaceId`                                                                            | a workspace was closed                     |
+| `SessionCreated`    | `SessionInfo`                                                                            | a session was created                      |
+| `SessionRemoved`    | `SessionId`                                                                              | a session was removed                      |
+| `SessionUpdated`    | `SessionInfo`                                                                            | title, message count, or other summary changed |
+| `Session`           | `{ id: SessionId, seq: u64, event: EngineEvent }`                                        | a content event from one session's engine; `seq` is the session's durable-message index at emit time, so a client can reconcile a `ServerMessage::History` snapshot against the live tail and detect loss on the broadcast bus |
 
 `EngineEvent` is the engine's view of what is happening on a session — see
 [Engine events](#engine-events) below.
@@ -166,17 +176,33 @@ What the client sends. Variants:
 |---------------------|-------------------------------------------------------------------------|
 | `CreateWorkspace`   | `{ path: string }`                                                      |
 | `CreateSession`     | `{ path: string, config: SessionConfig, client: ClientInfo }`           |
-| `History`           | `{ session: SessionId }`                                               |
+| `History`           | `{ session: SessionId }`                                                |
 | `Command`           | `{ session: SessionId, command: EngineCommand }`                        |
 | `Blob`              | `{ hash: string }`                                                      |
 | `ListProfiles`      | `{}` (refreshes `Hello.profiles` without reconnecting)                  |
 | `RemoveSession`     | `{ session: SessionId }`                                                |
 | `RemoveWorkspace`   | `{ workspace: WorkspaceId }`                                            |
+| `Subscribe`         | `{ sessions: [SessionId] }` (replaces the focused-set for this connection) |
 
 A `CreateSession` followed by a `Command { UserMessage }` is the minimal
 flow to start a turn. The turn's progress shows up as a stream of `Session`
 events on that session id, ending with `EngineEvent::Agent(Done)` or
 `EngineEvent::Error`.
+
+### Subscribing to the content firehose
+
+A connection starts subscribed to **nothing**: the daemon drops the
+high-volume content stream (`EngineEvent::Agent` deltas) for every session
+unless the connection has named it. A client sends `Subscribe { sessions: [...] }`
+when its view changes — typically the attached session, plus the one previewed
+in a picker. Each call **replaces** the previous set; pass an empty array to stop
+receiving content for all sessions.
+
+Lifecycle events (`WorkspaceCreated`/`WorkspaceRemoved`/`SessionCreated`/
+`SessionRemoved`/`SessionUpdated`), permission requests, and turn errors are
+always delivered for every session, regardless of the subscription, so a
+background session can still surface a prompt or a failure. The gating only
+applies to the per-session `Agent` content stream.
 
 ### SessionConfig
 
@@ -245,15 +271,15 @@ as a direct `RequestPermission`). Variants:
 `AgentEvent` is the agent loop's stream — the content a client renders in
 real time:
 
-| variant              | payload                          | meaning                                                                  |
-|----------------------|----------------------------------|--------------------------------------------------------------------------|
-| `TextDelta`          | `string`                         | incremental assistant text                                               |
-| `ReasoningDelta`     | `string`                         | incremental assistant reasoning ("thinking")                             |
-| `ReasoningDone`      | `TimeSpan`                       | reasoning finished; the model began answering or calling tools, and the span tells a frontend "thought for Ns" |
-| `AssistantMessage`   | `Message`                        | the assistant turn, assembled and appended to the conversation           |
-| `ToolCall`           | `ToolCall`                       | a tool call about to run (after approval, if any)                        |
-| `ToolResult`         | `{ name, message }`              | a finished (or denied) tool call, with its output fed back               |
-| `Done`               | `{ stop_reason, rounds }`        | final answer reached (no more tool calls)                                |
+| variant              | payload                            | meaning                                                                  |
+|----------------------|------------------------------------|--------------------------------------------------------------------------|
+| `TextDelta`          | `{ id, delta }`                    | incremental assistant text, tagged with the assistant message id it builds |
+| `ReasoningDelta`     | `{ id, delta }`                    | incremental assistant reasoning ("thinking"), tagged with the assistant message id |
+| `ReasoningDone`      | `{ id, span }`                     | reasoning finished; the model began answering or calling tools, and the span tells a frontend "thought for Ns" |
+| `AssistantMessage`   | `Message`                          | the assistant turn, assembled and appended to the conversation           |
+| `ToolCall`           | `ToolCall`                         | a tool call about to run (after approval, if any)                        |
+| `ToolResult`         | `{ name, message }`                | a finished (or denied) tool call, with its output fed back               |
+| `Done`               | `{ stop_reason, rounds }`          | final answer reached (no more tool calls)                                |
 
 ## Message shape
 

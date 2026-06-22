@@ -120,9 +120,10 @@ version. The full reference is in [Lua primitives](primitives/).
 
 | Primitive                          | Description                                  |
 |------------------------------------|----------------------------------------------|
-| `yuke.fs.read(path[, from, to])`   | Read a file, optionally a line range         |
+| `yuke.fs.read(path[, start, end])` | Read a file, optionally a 1-indexed line range (inclusive) |
 | `yuke.fs.write(path, content)`     | Write a file                                 |
 | `yuke.fs.append(path, content)`    | Create or append                             |
+| `yuke.fs.edit(path, old, new[, opts])` | Replace a unique substring in place; `opts.replace_all` swaps every match. Returns the count |
 | `yuke.fs.exists(path)`             | Check if a path exists                       |
 | `yuke.fs.list(path)`               | Array of `{ name, is_dir }`                  |
 | `yuke.fs.delete(path)`             | Remove a file                                |

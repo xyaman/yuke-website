@@ -22,6 +22,8 @@ yuke.fs.read(path)              -- whole file as a string
 yuke.fs.read(path, start, end)  -- lines start..end (1-indexed, inclusive)
 yuke.fs.write(path, content)    -- create or overwrite
 yuke.fs.append(path, content)   -- create or append
+yuke.fs.edit(path, old, new)    -- replace the unique occurrence of `old`; returns the count
+yuke.fs.edit(path, old, new, { replace_all = true })  -- replace every occurrence
 yuke.fs.exists(path)            -- bool
 yuke.fs.list(path)              -- array of { name = string, is_dir = bool }
 yuke.fs.delete(path)            -- remove a file
@@ -33,6 +35,11 @@ yuke.fs.stat(path)              -- { size, is_dir, is_file, modified } or nil if
 
 `stat.modified` is seconds since the Unix epoch. `stat` returns `nil` for a
 missing path rather than erroring, so a handler can branch on it.
+
+`edit` is a literal substring match (no Lua patterns, no regex). `old` must
+match exactly once unless `replace_all` is set; a missing, empty, or non-unique
+match is an error, so a handler can't silently edit the wrong place. It returns
+the number of replacements made.
 
 ## yuke.glob
 

@@ -192,24 +192,34 @@ yuke.on("tool_result", function(call, output) ... end)
 
 ### Events
 
-| event         | handler signature        | role                                                       |
-|---------------|--------------------------|------------------------------------------------------------|
-| `before_tool` | `function(call)`         | gate: allow / ask / deny / rewrite args, before the call runs |
-| `after_tool`  | `function(call, output)` | rewrite the result a tool fed back                         |
-| `turn_start`  | `function(round)`        | observe: an assistant round is starting                     |
-| `turn_end`    | `function(round)`        | observe: a round's message and tools finished               |
-| `tool_call`   | `function(call)`         | observe: a tool is about to run                             |
-| `tool_result` | `function(call, output)` | observe: a tool result was fed back                         |
-| `done`        | `function(reason, rounds)` | observe: the turn reached a final answer                  |
+| event                 | handler signature        | role                                                       |
+|-----------------------|--------------------------|------------------------------------------------------------|
+| `before_tool`         | `function(call)`         | gate: allow / ask / deny / rewrite args, before the call runs |
+| `after_tool`          | `function(call, output)` | rewrite the result a tool fed back                         |
+| `user_message`        | `function(content)`      | gate: optionally rewrite the incoming user content, or consume the message so it never starts a turn |
+| `turn_start`          | `function(round)`        | observe: an assistant round is starting                     |
+| `turn_end`            | `function(round)`        | observe: a round's message and tools finished               |
+| `tool_call`           | `function(call)`         | observe: a tool is about to run                             |
+| `tool_result`         | `function(call, output)` | observe: a tool result was fed back                         |
+| `done`                | `function(reason, rounds)` | observe: the turn reached a final answer                  |
+| `turn_error`          | `function(code, message)` | observe: the turn failed (not a user cancel)              |
+| `model_changed`       | `function(name)`         | observe: the session switched to a different model          |
+| `reasoning_changed`   | `function(level)`        | observe: the session switched to a different reasoning level |
+| `permission_changed`  | `function(mode)`         | observe: the session's permission mode changed              |
+| `vm_start`            | `function()`             | observe: the session's VM came up (fires on every rebuild after eviction) |
+| `vm_stop`             | `function()`             | observe: the session's VM is going down                     |
+| `agent_start`         | `function()`             | observe: an agent run began (one user message to final answer) |
+| `agent_end`           | `function(outcome)`      | observe: the agent run ended, whatever the outcome          |
+| `assistant_message`   | `function(message)`      | observe: an assistant message, assembled and about to be recorded |
 
 `call` is `{ id, name, arguments }`, where `arguments` is the decoded
 argument table (not a JSON string). An unknown event name is an error at
 load time.
 
-### The two gates chain; observers don't
+### The gates chain; observers don't
 
-Observer return values are ignored. The gates thread their return value
-through each listener in order:
+Observer return values are ignored. The three gates thread their return
+value through each listener in order:
 
 - `before_tool` returns one of:
   - `nil`: no verdict. The session's permission mode and any remembered
@@ -232,6 +242,11 @@ through each listener in order:
   `nil`.
 - `after_tool` returns a string to replace the output, or `nil` to keep it.
   The (possibly replaced) output threads into the next listener.
+- `user_message` runs on every incoming user message before it starts a
+  turn. It may return `{ text = "..." }` to rewrite the message (the rewrite
+  threads into the next listener and the final content), or
+  `{ consume = true }` to drop the message so it never starts a turn
+  (short-circuits later listeners).
 
 A listener that errors is logged to stderr and skipped; `before_tool` then
 defers its verdict, so a buggy hook never aborts a turn.
@@ -249,6 +264,12 @@ end)
 -- Redact a secret from every tool result.
 yuke.on("after_tool", function(call, output)
   return (output:gsub("sk%-[%w]+", "[redacted]"))
+end)
+
+-- Drop empty user messages, normalize whitespace, prepend a session header.
+yuke.on("user_message", function(text)
+  if text:match("^%s*$") then return { consume = true } end
+  return { text = "[user] " .. text:gsub("%s+", " ") }
 end)
 
 -- Audit log of every tool the model ran.
