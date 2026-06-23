@@ -7,7 +7,7 @@ landing at `/`, Starlight docs at `/<topic>/`.
 
 ```sh
 npm install
-npm run dev          # http://localhost:4321/yuke-website/
+npm run dev          # http://localhost:4321/
 ```
 
 ## Build
@@ -19,8 +19,8 @@ npm run preview      # serve the build locally
 
 ## Deploy
 
-Pushes to `main` deploy via GitHub Pages. The site is served at
-`https://xyaman.github.io/yuke-website/` until a custom domain is added.
+Pushes to `main` deploy via GitHub Pages, served at `https://yuke.sh`
+(custom domain via `public/CNAME`).
 
 To move to a custom domain: update `site` and remove `base` in
 `astro.config.mjs`, then add a `CNAME` file under `public/`.

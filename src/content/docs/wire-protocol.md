@@ -6,7 +6,7 @@ description: The WebSocket protocol yuke daemon speaks to clients.
 The daemon exposes a single WebSocket endpoint. Every connected client shares
 one live view of the daemon's workspaces, sessions, and engine events. This
 page is the human-readable version; the machine-readable contract lives at
-[`/asyncapi.json`](https://xyaman.github.io/yuke-website/asyncapi.json) (AsyncAPI 3.0, generated from the Rust
+[`/asyncapi.json`](/asyncapi.json) (AsyncAPI 3.0, generated from the Rust
 types in [`yuke-core`](https://github.com/xyaman/yuke)).
 
 ## Endpoint
@@ -370,7 +370,7 @@ in the on-disk transcript but never re-sent to the model.
 ## Reference
 
 For the full schema (every variant, every field, every description), see
-[`asyncapi.json`](https://xyaman.github.io/yuke-website/asyncapi.json). It is the same document rendered by the
+[`asyncapi.json`](/asyncapi.json). It is the same document rendered by the
 Rust types in [`yuke-core`](https://github.com/xyaman/yuke), so any mismatch
 between this page and the code is a bug in this page; the JSON is the
 contract.

@@ -15,20 +15,20 @@
 			name="description"
 			content="A minimal CLI for running LLM agents against any OpenAI-compatible endpoint. Oneshot mode, daemon mode over WebSocket, configured in Lua and JSON."
 		/>
-		<link rel="icon" href="/yuke-website/favicon.ico" sizes="any" />
-		<link rel="icon" href="/yuke-website/favicon-32.png" type="image/png" sizes="32x32" />
-		<link rel="apple-touch-icon" href="/yuke-website/apple-touch-icon.png" />
-		<link rel="stylesheet" href="/yuke-website/landing.css" />
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="stylesheet" href="/landing.css" />
 	</head>
 	<body class="yuke-landing">
 		<header class="site-header">
-			<a class="brand" href="/yuke-website/">
-				<img src="/yuke-website/logo.png" alt="" width="36" height="36" />
+			<a class="brand" href="/">
+				<img src="/logo.png" alt="" width="36" height="36" />
 				<span>yuke</span>
 			</a>
 			<nav class="site-nav">
-				<a href="/yuke-website/getting-started/">Docs</a>
-				<a href="/yuke-website/wire-protocol/">Wire protocol</a>
+				<a href="/getting-started/">Docs</a>
+				<a href="/wire-protocol/">Wire protocol</a>
 				<a href="https://github.com/xyaman/yuke">GitHub</a>
 			</nav>
 		</header>
@@ -37,14 +37,14 @@
 			<section class="hero">
 				<div class="split">
 					<div class="split-text">
-						<img class="hero-mascot pixel" src="/yuke-website/bull/bull-charge.png" alt="" width="96" height="96" />
+						<img class="hero-mascot pixel" src="/bull/bull-charge.png" alt="" width="96" height="96" />
 						<h1>A minimal CLI for running LLM agents.</h1>
 						<p class="tagline">
 							Oneshot mode, daemon mode over WebSocket, configured in Lua and JSON. Talk to any
 							OpenAI-compatible endpoint.
 						</p>
 						<div class="hero-actions">
-							<a class="cta" href="/yuke-website/getting-started/">Get started →</a>
+							<a class="cta" href="/getting-started/">Get started →</a>
 							<a class="cta cta-secondary" href="https://github.com/xyaman/yuke">View on GitHub</a>
 						</div>
 					</div>
@@ -72,7 +72,7 @@ $ yuke -p "summarize src/"
 			<section class="demo-section">
 				<div class="split">
 					<div class="split-text">
-						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Oneshot mode</h2>
+						<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> Oneshot mode</h2>
 						<p class="section-lede">
 							Run one assistant turn in-process, no server. The CLI loads <code>~/.yuke/providers.json</code>
 							for the catalog and <code>~/.yuke/init.lua</code> for tools and hooks. Sessions persist under
@@ -101,7 +101,7 @@ $ yuke -p "summarize src/"
 			<section class="architecture-section">
 				<div class="split">
 					<div class="split-text">
-						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> How it fits together</h2>
+						<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> How it fits together</h2>
 						<p class="section-lede">
 							One binary, two modes. The CLI is the client; <code>yuke daemon</code> runs an optional
 							long-lived server that any WebSocket client can talk to.
@@ -109,7 +109,7 @@ $ yuke -p "summarize src/"
 						<ul class="demo-bullets">
 							<li>CLI and daemon share one binary</li>
 							<li>Multiple clients see one live event stream</li>
-							<li>Wire protocol is <a href="/yuke-website/asyncapi.json">documented</a>, generated from Rust types</li>
+							<li>Wire protocol is <a href="/asyncapi.json">documented</a>, generated from Rust types</li>
 						</ul>
 					</div>
 					<div class="split-visual">
@@ -131,7 +131,7 @@ $ yuke -p "summarize src/"
 			<section class="demo-section">
 				<div class="split split-flip">
 					<div class="split-text">
-						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Daemon mode</h2>
+						<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> Daemon mode</h2>
 						<p class="section-lede">
 							Start the daemon once, connect any client. Sessions persist under
 							<code>~/.yuke/workspaces/</code> and stream events to every connected client in
@@ -143,8 +143,8 @@ $ yuke -p "summarize src/"
 							<li>Build a TUI in Elm, Ratatui, Bubble Tea, GPUI</li>
 						</ul>
 						<p class="section-trailer">
-							Full schema at <a href="/yuke-website/asyncapi.json">/asyncapi.json</a> ·
-							<a href="/yuke-website/wire-protocol/">human-readable guide →</a>
+							Full schema at <a href="/asyncapi.json">/asyncapi.json</a> ·
+							<a href="/wire-protocol/">human-readable guide →</a>
 						</p>
 					</div>
 					<div class="split-visual">
@@ -165,7 +165,7 @@ $ yuke -p "summarize src/"
 			</section>
 
 			<section class="features-section">
-				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> What you get</h2>
+				<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> What you get</h2>
 				<div class="features">
 					<article>
 						<h3>Oneshot mode</h3>
@@ -214,7 +214,7 @@ $ yuke -p "summarize src/"
 						<h3>Open wire protocol</h3>
 						<p>
 							The daemon speaks a documented JSON-over-WebSocket protocol (<a
-								href="/yuke-website/asyncapi.json">asyncapi.json</a
+								href="/asyncapi.json">asyncapi.json</a
 							>). Build your own client in any language.
 						</p>
 					</article>
@@ -222,7 +222,7 @@ $ yuke -p "summarize src/"
 						<h3>yuke-tui</h3>
 						<p>
 							An interactive terminal client that ships with yuke. Its UI is fully
-							<a href="/yuke-website/tui/">Lua-scriptable</a>: rebind keys, swap layouts, register
+							<a href="/tui/">Lua-scriptable</a>: rebind keys, swap layouts, register
 							custom commands, paint your own widgets — all from
 							<code>~/.yuke/tui/init.lua</code>.
 						</p>
@@ -245,7 +245,7 @@ $ yuke -p "summarize src/"
 			</section>
 
 			<section class="config-section">
-				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Three files, no DSL</h2>
+				<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> Three files, no DSL</h2>
 				<p class="section-lede">
 					The model catalog is JSON, edited with any tool and reloaded by the daemon on demand.
 					Credentials live in their own JSON file (mode <code>0600</code>), separate from the
@@ -299,13 +299,13 @@ $ yuke -p "summarize src/"
 					</div>
 				</div>
 				<p class="section-trailer">
-					<a href="/yuke-website/providers/">Provider catalog →</a> ·
-					<a href="/yuke-website/lua-config/">init.lua API →</a>
+					<a href="/providers/">Provider catalog →</a> ·
+					<a href="/lua-config/">init.lua API →</a>
 				</p>
 			</section>
 
 			<section class="principles-section">
-				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Different by design</h2>
+				<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> Different by design</h2>
 				<div class="principles-grid">
 					<article>
 						<h3>Minimal</h3>
@@ -333,40 +333,40 @@ $ yuke -p "summarize src/"
 			</section>
 
 			<section class="bull-states">
-				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> The mascot has moods</h2>
+				<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> The mascot has moods</h2>
 				<p class="section-lede">
 					The bull has states. Use them as loading hints, status indicators, or just decoration
 					in your own docs. PNGs are free to take.
 				</p>
 				<div class="states-grid">
 					<figure>
-						<img class="pixel" src="/yuke-website/bull/bull-idle.png" alt="idle" width="96" height="96" />
+						<img class="pixel" src="/bull/bull-idle.png" alt="idle" width="96" height="96" />
 						<figcaption>idle</figcaption>
 					</figure>
 					<figure>
-						<img class="pixel" src="/yuke-website/bull/bull-charge.png" alt="charge" width="96" height="96" />
+						<img class="pixel" src="/bull/bull-charge.png" alt="charge" width="96" height="96" />
 						<figcaption>charge</figcaption>
 					</figure>
 					<figure>
-						<img class="pixel" src="/yuke-website/bull/bull-sleep.png" alt="sleep" width="96" height="96" />
+						<img class="pixel" src="/bull/bull-sleep.png" alt="sleep" width="96" height="96" />
 						<figcaption>sleep</figcaption>
 					</figure>
 					<figure>
-						<img class="pixel" src="/yuke-website/bull/bull-demon.png" alt="demon" width="96" height="96" />
+						<img class="pixel" src="/bull/bull-demon.png" alt="demon" width="96" height="96" />
 						<figcaption>error</figcaption>
 					</figure>
 					<figure>
-						<img class="pixel" src="/yuke-website/bull/bull-skull.png" alt="skull" width="96" height="96" />
+						<img class="pixel" src="/bull/bull-skull.png" alt="skull" width="96" height="96" />
 						<figcaption>failed</figcaption>
 					</figure>
 				</div>
 				<p class="section-trailer">
-					Five of nine available. The full set lives in <a href="/yuke-website/bull/">/bull/</a>.
+					Five of nine available. The full set lives in <a href="/bull/">/bull/</a>.
 				</p>
 			</section>
 
 			<section class="use-cases">
-				<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> What people build with it</h2>
+				<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> What people build with it</h2>
 				<div class="cases">
 					<article>
 						<h3>Daily-driver CLI</h3>
@@ -385,9 +385,9 @@ $ yuke -p "summarize src/"
 					<article>
 						<h3>Custom frontends</h3>
 						<p>
-							<a href="/yuke-website/tui/">yuke-tui</a> is the bundled reference client; build
+							<a href="/tui/">yuke-tui</a> is the bundled reference client; build
 							your own in any stack (Elm, Ratatui, Bubble Tea, GPUI). The
-							<a href="/yuke-website/wire-protocol/">wire protocol</a> is documented and stable.
+							<a href="/wire-protocol/">wire protocol</a> is documented and stable.
 						</p>
 					</article>
 				</div>
@@ -396,13 +396,13 @@ $ yuke -p "summarize src/"
 			<section class="final-cta">
 				<div class="split">
 					<div class="split-text">
-						<h2 class="section-title"><img class="section-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="28" height="28" /> Try it.</h2>
+						<h2 class="section-title"><img class="section-mascot pixel" src="/bull/bull-idle.png" alt="" width="28" height="28" /> Try it.</h2>
 						<p class="section-lede">
 							Install yuke, drop a <code>providers.json</code> next to <code>init.lua</code>, set the
 							API key in your shell. One prompt in.
 						</p>
 						<div class="hero-actions">
-							<a class="cta" href="/yuke-website/getting-started/">Read the docs →</a>
+							<a class="cta" href="/getting-started/">Read the docs →</a>
 							<a class="cta cta-secondary" href="https://github.com/xyaman/yuke">Star on GitHub</a>
 						</div>
 					</div>
@@ -429,9 +429,9 @@ $ export OPENAI_API_KEY=*** yuke -p "summarize src/"</code></pre>
 
 		<footer class="site-footer">
 			<small>
-				<img class="footer-mascot pixel" src="/yuke-website/bull/bull-idle.png" alt="" width="16" height="16" />
-				© xyaman · <a href="/yuke-website/getting-started/">Docs</a> ·
-				<a href="/yuke-website/wire-protocol/">Wire protocol</a> ·
+				<img class="footer-mascot pixel" src="/bull/bull-idle.png" alt="" width="16" height="16" />
+				© xyaman · <a href="/getting-started/">Docs</a> ·
+				<a href="/wire-protocol/">Wire protocol</a> ·
 				<a href="https://github.com/xyaman/yuke">GitHub</a> ·
 				<a href="https://github.com/xyaman/yuke/blob/main/LICENSE">MIT</a>
 			</small>
