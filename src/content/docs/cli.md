@@ -6,7 +6,7 @@ description: Command-line flags for yuke and yuke daemon.
 ## yuke (oneshot)
 
 Run a single turn in-process and exit. The prompt comes from `-p`, from piped
-stdin, or (when neither is set, interactively) `yuke` prints help.
+stdin, or (when neither is set, interactively) `yuke` opens the TUI.
 
 ```
 yuke [OPTIONS]

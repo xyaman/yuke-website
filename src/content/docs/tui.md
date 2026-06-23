@@ -104,6 +104,8 @@ Handed to every paint callback, hook, keymap, and command handler.
 |---|---|---|
 | `ctx.connected` | bool | daemon socket up |
 | `ctx.mode` | string | active key mode (`"dashboard"`, `"insert"`, `"normal"`, ...) |
+| `ctx.pending_chord` | string | the in-progress multi-key chord (e.g. `"g"` after a bare `g`), for the footer's showcmd; `""` when none |
+| `ctx.notice` | string | the transient footer notice (a fault or hint), `""` when none |
 | `ctx.focus` | string | id of the focused region (`"composer"`, `"transcript"`, an overlay id) |
 | `ctx.size` | table | screen dimensions `{ width, height }` |
 | `ctx.input` | table | composer: `{ text = <string>, lines = <string[]>, cursor = { row, col } }` — `text` is the full buffer joined by `\n`; `lines` is the logical lines; `cursor` is the logical (0-based) position |
@@ -226,17 +228,24 @@ never read as the start of a `<C-x>` chord).
 
 ## yuke.tui.layout
 
-Declare the region tree for a view. Leaves are built-in widgets (by name) or
-paint handles. Install the session-view tree with `set_root` and the
+Declare the region tree for a view. Leaves are **built-in widgets** (by
+name, Rust-implemented), **Lua components** (paint handles returned by
+`yuke.tui.paint.register` or `require("yuke.tui.components.*")`), or your
+own paint handles. Install the session-view tree with `set_root` and the
 dashboard tree with `set_dashboard`.
 
 ```lua
 local L = yuke.tui.layout
+local statusline = require("yuke.tui.components.statusline")
+local footer     = require("yuke.tui.components.footer")
+
 yuke.tui.set_root(
   L.rows {
-    L.leaf("statusline", { size = 1 }),
+    L.leaf(statusline,   { size = 1 }),
     L.leaf("transcript", { grow = 1 }),
-    L.leaf("composer",   { size = 3, min = 1, max = 10 }),
+    L.leaf("working",    { fit = true }),
+    L.leaf("composer",   { fit = true, border = { sides = "top" } }),
+    L.leaf(footer,       { size = 1 }),
   }
 )
 ```
@@ -245,7 +254,7 @@ yuke.tui.set_root(
 |---|---|---|
 | `L.rows{ ... }` | children stacked top-to-bottom | a.k.a. vertical split |
 | `L.cols{ ... }` | children left-to-right | a.k.a. horizontal split |
-| `L.leaf(widget, opts?)` | `widget: string \| PaintHandle` | a built-in name or a `paint.register` handle |
+| `L.leaf(widget, opts?)` | `widget: string \| PaintHandle` | a built-in name, a Lua component handle, or a `paint.register` handle |
 | `yuke.tui.set_root(node)` | install / replace the session view | call again to swap the whole UI |
 | `yuke.tui.set_dashboard(node)` | install / replace the dashboard | the screen shown before a session is attached; defaults to the bull-logo layout |
 
@@ -269,16 +278,20 @@ inherit from `opts.border` (the global default).
 `{ top, right, bottom, left }` table with `x` / `y` shorthands.
 
 **Built-in widgets** (Rust-implemented leaves; each is replaceable by a paint
-handle):
+handle or a Lua component):
 
 | Name | Renders |
 |---|---|
-| `"statusline"` | session title, model, reasoning, permission mode, turn / queued / connection state |
 | `"transcript"` | the scrolling conversation: user / assistant / tool blocks, **live token streaming** (text and reasoning), tool calls and results |
 | `"composer"` | the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs |
 | `"working"` | the spinner + `opts.working_label` + elapsed time while a turn runs; collapses to zero height when idle (give it `{ fit = true }`) |
-| `"footer"` | the mode / hint line plus any transient notice |
-| `"logo"` | the bull logo, the live session count, and the entry hints (dashboard only) |
+
+The statusline, logo, and footer are **Lua components**, not built-in
+names: `require("yuke.tui.components.statusline" \| "logo" \| "footer")`
+returns the bundled paint handle. They are installed by the bundled
+`init.lua`; a user config can reuse, restyle, or replace any of them.
+See [UI components](tui-components/) for the convention and how to
+write your own.
 
 ---
 
@@ -286,7 +299,9 @@ handle):
 
 Register a callback that paints a leaf. The callback runs once per frame
 while its leaf is visible, receiving a **slice** (the leaf's cell rectangle)
-and `ctx`.
+and `ctx`. The default statusline, logo, and footer are built this way;
+see [UI components](tui-components/) for the component convention and
+how to write or replace one.
 
 ```lua
 local hud = yuke.tui.paint.register(function(slice, ctx)

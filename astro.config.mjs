@@ -45,6 +45,7 @@ export default defineConfig({
 						{ slug: 'local-mode', label: 'Local mode' },
 						{ slug: 'daemon-mode', label: 'Daemon mode' },
 						{ slug: 'tui', label: 'yuke-tui' },
+						{ slug: 'tui-components', label: 'yuke-tui UI components' },
 						{ slug: 'lua-config', label: 'init.lua' },
 						{ slug: 'tools', label: 'Writing tools' },
 					],
