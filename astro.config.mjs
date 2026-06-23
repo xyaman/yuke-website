@@ -4,11 +4,10 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 //
-// GitHub Pages serves this site at https://xyaman.github.io/yuke-website/.
-// When a custom domain is set up, remove the `base` option and update `site`.
+// Custom domain (yuke.sh) is set up via public/CNAME, so assets are served
+// at the apex. Keep `site` and `base` aligned with the live domain.
 export default defineConfig({
-	site: 'https://xyaman.github.io',
-	base: '/yuke-website',
+	site: 'https://yuke.sh',
 	integrations: [
 		starlight({
 			title: 'yuke',
