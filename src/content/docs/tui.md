@@ -188,12 +188,6 @@ usual keys. They are no-ops when `opts.vim = false`.
 | `actions.quit()` | tear down and exit |
 | `actions.reload()` | re-run bundled + user `init.lua`, rebuilding the Lua runtime |
 
-### Stub verb
-
-A single verb is a no-op so configs that reference it still load:
-
-- `actions.run_daemon_command` — awaits the daemon's command surface.
-
 ---
 
 ## yuke.tui.keymap
@@ -469,7 +463,9 @@ internals) are not surfaced to Lua — the per-message hooks fire once per
 committed message.
 
 `yuke.tui.on(event, fn)` accepts any event name and records the handler;
-unknown events still fire the handler at the next opportunity.
+unknown events still fire the handler at the next opportunity. Handlers
+are scoped to the session, there is no unsubscribe (a `reload` re-runs
+`init.lua` in a fresh VM, so handlers never accumulate).
 
 ---
 
