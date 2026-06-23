@@ -77,10 +77,19 @@ workspace id, so the same folder maps to the same workspace across daemon
 restarts. A **session** is a conversation; its id is 16 lowercase hex
 characters and doubles as the on-disk JSONL transcript file name.
 
-Clients create a workspace (or find one that already exists) and create a
-session inside it. The full flow lives in the [Wire
+Workspaces exist only to hold sessions — there is no client-visible
+`CreateWorkspace` and no separate "create a session" step. A client mints
+a session id and sends a `ClientMessage::Command` whose `init: SessionInit`
+carries the workspace path and the `SessionConfig`. The daemon materializes
+the session (opening the workspace if new) before routing the command, so
+an empty session never exists. The full flow lives in the [Wire
 protocol](wire-protocol/); the short version is in [Wire protocol →
 ClientMessage](wire-protocol/#clientmessage) below.
+
+A client that wants to **discover** a folder to open can browse the
+daemon host with `ClientMessage::ListDir` and pick a directory from the
+`ServerMessage::DirListing` reply. The chosen path rides back on
+`actions.new_session({ path = ... })` and is materialised the same way.
 
 ## Permission modes and the approval loop
 

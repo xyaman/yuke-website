@@ -5,8 +5,10 @@ description: Command-line flags for yuke and yuke daemon.
 
 ## yuke (oneshot)
 
-Run a single turn in-process and exit. The prompt comes from `-p`, from piped
-stdin, or (when neither is set, interactively) `yuke` opens the TUI.
+Run a single turn in-process and exit. The prompt comes from `-p` or from
+piped stdin. With neither, `yuke` opens the TUI client against the daemon
+configured in `~/.yuke/tui/init.lua` (or, failing that, the default
+`127.0.0.1:7878`).
 
 ```
 yuke [OPTIONS]

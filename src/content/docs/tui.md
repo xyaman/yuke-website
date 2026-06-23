@@ -20,26 +20,32 @@ and different files. They share none of the same surface.
 | Surface | Where it runs | File | What it does |
 |---|---|---|---|
 | `yuke.*` (daemon) | inside the engine | `~/.yuke/init.lua` | tools, hooks, `yuke.opts`, `fs`/`exec`/`http`, `yuke.cmd` |
-| `yuke.tui.*` (this) | inside the TUI client | `~/.yuke/tui/init.lua` | layout, paint, keymap, theme, events, client commands |
+| `yuke.tui.*` (this) | inside the TUI client | `~/.yuke/tui/init.lua` | layout, paint, input scopes, theme, events, client commands |
 
 The TUI VM has **no** `fs` / `exec` / `http` / `tool` and no agent hooks; it is
 a view layer. The two share only the `mlua` dependency.
 
 ## The model: state in, actions out
 
-Every paint callback, hook, and command handler receives a read-only **`ctx`**
+Every paint callback, hook, and input handler receives a read-only **`ctx`**
 describing current state. The only way to change anything (send a turn, scroll,
 switch model, edit the composer, answer a prompt) is to call a
 **`yuke.tui.actions.*`** verb. Paint callbacks must be pure: read `ctx`, write
 cells, no side effects.
 
 ```lua
--- read state from ctx; mutate state through actions
-yuke.tui.keymap.set("insert", "<CR>", function(ctx)
-  if ctx.input.text ~= "" then
-    yuke.tui.actions.send()      -- sends the composer as a user turn
-  end
-end)
+-- declare a key binding, read state from ctx, mutate state through actions
+yuke.tui.input.scope("insert", {
+  inherit = "global",
+  text    = "composer",
+  keys = {
+    ["<CR>"] = function(ctx)
+      if ctx.input.text ~= "" then
+        yuke.tui.actions.send()      -- sends the composer as a user turn
+      end
+    end,
+  },
+})
 ```
 
 A buggy config can therefore garble the *view* but can never corrupt a turn or
@@ -51,18 +57,20 @@ The TUI's Lua config is built from two layers, run in one VM in order:
 
 1. **Bundled default** — embedded in the binary, sets the theme, the root
    layouts (the dashboard with the bull logo, the session view with the
-   statusline / transcript / composer), the standard keymaps, and the built-in
-   commands. Ships so the TUI is fully usable with no user config.
+   statusline / transcript / composer), the standard input scopes, the bundled
+   pickers, and the built-in client commands. Ships so the TUI is fully
+   usable with no user config.
 2. **User overlay** — `~/.yuke/tui/init.lua` (optional), runs after the default
-   and can extend it (add a sidebar, rebind keys, register commands) or
-   replace it wholesale (`yuke.tui.set_root(...)` with a fresh tree).
+   and can extend it (add a sidebar, rebind keys, register commands, add
+   custom pickers) or replace it wholesale (`yuke.tui.set_root(...)` with a
+   fresh tree).
 
-The bundled default boots in `dashboard` mode (the startup screen) and
-transitions to `insert` mode on attach. Setting `yuke.tui.opts.vim = true`
-loads the bundled `runtime/vim.lua`, which adds a `normal` mode reachable with
-`<Esc>`, with vim motions, operators, and edits on the composer. Either way,
-every binding is plain `keymap.set`, so vim is just the bundled default, not a
-hardcoded mode.
+The bundled default boots in `dashboard` scope (the startup screen) and
+transitions to `insert` on attach. Setting `yuke.tui.opts.vim = true` loads
+the bundled `runtime/vim.lua`, which adds a `normal` scope reachable with
+`<Esc>`, with vim motions, operators, and edits on the composer. Every binding
+is plain `input.scope`/`input.extend`, so vim is just the bundled default,
+not a hardcoded mode.
 
 ---
 
@@ -76,7 +84,7 @@ Calling `yuke.tui.opts{ ... }` is no longer supported.
 ```lua
 yuke.tui.opts.daemon         = "127.0.0.1:7878"
 yuke.tui.opts.vim            = false                      -- modal composer + vim motions
-yuke.tui.opts.start_mode     = "insert"
+yuke.tui.opts.start_scope    = "insert"
 yuke.tui.opts.working_label  = "working…"
 yuke.tui.opts.working_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
 yuke.tui.opts.scroll_lines   = 2                          -- rows per mouse-wheel notch
@@ -87,7 +95,7 @@ yuke.tui.opts.border         = "rounded"                  -- inherited window-bo
 |---|---|---|---|
 | `daemon` | string | `"127.0.0.1:7878"` | `host:port` or a full `ws://` / `wss://` URL. A CLI positional argument overrides this. |
 | `vim` | bool | `false` | when `true`, loads the bundled vim bindings (`runtime/vim.lua`); the composer is modal with vim motions and edits |
-| `start_mode` | string | `"insert"` | the key mode the session view boots in (the dashboard always uses `"dashboard"`) |
+| `start_scope` | string | `"insert"` | the input scope the session view boots in (the dashboard always uses `"dashboard"`) |
 | `working_label` | string | `"working…"` | label of the built-in `working` leaf |
 | `working_frames` | string[] | the Braille dots | the spinner frames the `working` leaf cycles over time |
 | `scroll_lines` | integer | `2` | rows one mouse-wheel notch scrolls; a small step stays smooth on trackpads that emit a burst per gesture. Raise it for a click wheel that emits one event per notch. |
@@ -97,16 +105,17 @@ yuke.tui.opts.border         = "rounded"                  -- inherited window-bo
 
 ## The `ctx` state table
 
-Handed to every paint callback, hook, keymap, and command handler.
+Handed to every paint callback, hook, input handler, and command handler.
 **Read-only.** Read it, but mutate state only through `yuke.tui.actions.*`.
 
 | Field | Type | Notes |
 |---|---|---|
 | `ctx.connected` | bool | daemon socket up |
-| `ctx.mode` | string | active key mode (`"dashboard"`, `"insert"`, `"normal"`, ...) |
+| `ctx.scope` | string | active input scope after modal / overlay / focus routing (e.g. `"global"`, `"insert"`, `"picker"`, an overlay's `input`) |
+| `ctx.base_scope` | string | the input scope the session or dashboard selected (the "real" mode, before an overlay pushes its own) |
 | `ctx.pending_chord` | string | the in-progress multi-key chord (e.g. `"g"` after a bare `g`), for the footer's showcmd; `""` when none |
 | `ctx.notice` | string | the transient footer notice (a fault or hint), `""` when none |
-| `ctx.focus` | string | id of the focused region (`"composer"`, `"transcript"`, an overlay id) |
+| `ctx.focus` | string | id of the focused region (`"composer"`, an overlay id, ...) |
 | `ctx.size` | table | screen dimensions `{ width, height }` |
 | `ctx.input` | table | composer: `{ text = <string>, lines = <string[]>, cursor = { row, col } }` — `text` is the full buffer joined by `\n`; `lines` is the logical lines; `cursor` is the logical (0-based) position |
 | `ctx.scroll` | table | `{ offset, at_bottom }` — `offset` is rows above the bottom, `at_bottom` is `true` when the transcript is pinned to the latest |
@@ -133,14 +142,14 @@ first call, not eagerly.
 ## yuke.tui.actions
 
 The verbs. Every state change goes through one of these. They are safe to call
-from keymaps, commands, and hooks; they update local UI state and / or send a
-`ClientMessage` / `EngineCommand` to the daemon.
+from input handlers, commands, and hooks; they update local UI state and / or
+send a `ClientMessage` / `EngineCommand` to the daemon.
 
 ### Conversation
 
 | Action | Maps to | Notes |
 |---|---|---|
-| `actions.send(text?)` | `EngineCommand::UserMessage` | sends the given text, or the composer's contents when omitted; queues if a turn is in flight. Explicit text leaves the composer untouched. |
+| `actions.send(text?)` | `EngineCommand::UserMessage` | sends the given text, or the composer's contents when omitted; queues if a turn is in flight. The first message on a new session also carries a `ClientInfo` (taken from the bundled `init` table) and the `SessionInit` on the wire. Explicit text leaves the composer untouched. |
 | `actions.cancel()` | `EngineCommand::Cancel` | interrupt the in-flight turn |
 | `actions.set_model(name)` | model switch on next send | sticky; an identical value clears any staged switch |
 | `actions.set_reasoning(level)` | reasoning switch | must be offered by the active model |
@@ -149,12 +158,12 @@ from keymaps, commands, and hooks; they update local UI state and / or send a
 | `actions.eval(code)` | `EngineCommand::Eval` | run an arbitrary Lua snippet against the session's engine VM (requires the session's `allow_eval` opt); the result returns as an `eval_result` event |
 | `actions.permit(id, allow, remember?)` | answers the pending tool-permission prompt | `id` is accepted for forward compatibility; the app tracks one prompt at a time, so it answers that one. `remember` defaults to `false`. |
 | `actions.attach(id)` | focus a session by id | fetch `History`, start reconciling its firehose |
-| `actions.new_session(opts?)` | `CreateSession` | `opts`: `{ path?, profile?, model?, reasoning?, system?, permission? }`. Missing fields fall back to the launch workspace and current defaults. |
+| `actions.new_session(opts?)` | opens a new session | `opts`: `{ path?, profile?, model?, reasoning?, system?, permission? }`. The client mints the session id; the daemon materializes the session on the first `UserMessage`. Missing fields fall back to the launch workspace and current defaults. |
 | `actions.remove_session(id)` | `RemoveSession` | close the session on the daemon side |
-| `actions.open_workspace(path)` | `CreateWorkspace` | open (or find) a workspace by filesystem path |
-| `actions.remove_workspace(id)` | `RemoveWorkspace` | close the workspace and every session under it |
 | `actions.run_command(name, args?)` | run a registered client command | invokes the command registered via `yuke.tui.cmd.register`; `args` is a Lua array of positional strings, each surfaced as `args[i]` to the handler |
-| `actions.focus(region)` | move UI focus | `region` is one of the region ids Lua reads as `ctx.focus` (`"composer"`, `"transcript"`, an overlay id) |
+| `actions.browse()` | open the filesystem browser | a directory-picker overlay on the daemon host; the chosen folder is passed to `actions.new_session({ path = ... })` (or whichever hook the bundled default installs) |
+| `actions.copy(text?)` | copy to the clipboard | copies `text` to the local clipboard via OSC 52 (works over SSH and inside tmux). With no argument, copies the current transcript selection |
+| `actions.select_clear()` | drop the transcript selection | cancels the in-progress mouse drag, if any |
 
 ### Composer (local edits)
 
@@ -173,7 +182,7 @@ The composer's cursor and buffer are local UI state — no daemon round-trip.
 | `actions.composer.edit(e)` | one-key vim edits: `"x"` \| `"X"` \| `"D"` \| `"p"` \| `"P"` \| `"u"`, `"redo"`, plus the insert-entry keys `"a"` \| `"A"` \| `"I"` \| `"o"` \| `"O"` \| `"C"` (which enter insert). `"u"` undoes; `"redo"` re-applies a previously undone edit. |
 | `actions.composer.history(dir)` | recall submitted inputs: `"prev"` \| `"next"` |
 
-The motion / op / edit verbs exist so a custom `normal`-mode keymap can drive
+The motion / op / edit verbs exist so a custom `normal` input scope can drive
 the built-in modal editor; the bundled vim bindings are just these wired to the
 usual keys. They are no-ops when `opts.vim = false`.
 
@@ -183,69 +192,110 @@ usual keys. They are no-ops when `opts.vim = false`.
 |---|---|
 | `actions.scroll(delta)` | scroll the transcript by `delta` rows (negative = up) |
 | `actions.scroll_to(where)` | `"top"` \| `"bottom"` |
-| `actions.mode(name)` | switch key mode |
 | `actions.notify(text)` | transient footer notice (the same as `yuke.tui.notify`) |
 | `actions.back()` | return to the dashboard / session picker |
 | `actions.redraw()` | request a repaint (a no-op; a redraw follows every event) |
 | `actions.quit()` | tear down and exit |
 | `actions.reload()` | re-run bundled + user `init.lua`, rebuilding the Lua runtime |
 
+### Input scope, focus, and overlays
+
+These live on sub-tables so the top-level `actions.*` namespace stays free of
+naming collisions with a user's verbs. A buggy handler is treated as a
+non-fatal notice (like Neovim) — it never tears down the runtime.
+
+| Action | Effect |
+|---|---|
+| `actions.input.set_base(name)` | switch the base input scope (the equivalent of the old top-level `actions.mode(name)`) |
+| `actions.input.focus(id)` | focus a layout leaf by its `focus.id` |
+| `actions.input.focus_next()` | cycle to the next focusable leaf |
+| `actions.input.focus_prev()` | cycle to the previous focusable leaf |
+| `actions.picker.move(delta)` | move the picker highlight by `delta` rows |
+| `actions.picker.accept()` | confirm the current row (`Enter`) |
+| `actions.picker.close()` | dismiss the picker (`Esc`) |
+| `actions.picker.delete()` | delete the filter character under the cursor |
+| `actions.browser.move(delta)` | move the browser highlight by `delta` rows |
+| `actions.browser.descend()` | enter the highlighted directory |
+| `actions.browser.parent()` | go up one level |
+| `actions.browser.open()` | open the highlighted directory as a workspace |
+| `actions.browser.close()` | dismiss the browser (`Esc`) |
+| `actions.browser.delete()` | delete a filter character |
+
 ---
 
-## yuke.tui.keymap
+## yuke.tui.input
 
-nvim-style chord bindings, dispatched per key mode. A bound key in a mode
-shadows that mode's default text handling; an unbound printable key in
-`"insert"` mode falls through to the composer.
+Declarative input scopes. Each scope is a self-contained bundle of
+key bindings plus the rules for handling text input, mouse capture, and
+parent inheritance. A bound key in a scope shadows that scope's default
+text handling; an unbound printable key in a text-input scope (`text = "composer"`)
+falls through to the composer.
 
 ```lua
-yuke.tui.keymap.set("insert", "<CR>",  function(ctx)
-  if ctx.input.text ~= "" then yuke.tui.actions.send() end
-end)
-
-yuke.tui.keymap.set("*",      "<C-q>", function() yuke.tui.actions.quit() end)   -- "*" = all modes
+yuke.tui.input.scope("insert", {
+  inherit = "global",
+  text    = "composer",
+  paste   = "composer",
+  keys = {
+    ["<CR>"] = function(ctx)
+      if ctx.input.text ~= "" then yuke.tui.actions.send() end
+    end,
+    ["<C-c>"] = { run = function() yuke.tui.actions.cancel() end, desc = "cancel turn" },
+  },
+})
 ```
 
-| Function | Signature | Notes |
-|---|---|---|
-| `keymap.set(mode, lhs, rhs, opts?)` | `mode: string, lhs: string, rhs: function, opts?: table` | `rhs` receives `ctx`. `opts.desc` records a one-line description for `keymap.list` (a which-key view). |
-| `keymap.del(mode, lhs)` | | remove a binding |
-| `keymap.list(scope?)` | | return an array of `{ mode, lhs, desc }` rows for one mode, or every mode when `scope` is `nil` |
+| Function | Notes |
+|---|---|
+| `input.scope(name, spec)` | declare or replace a scope. `spec` keys: `inherit` (a parent scope name), `chords` (bool, accumulate multi-key bindings), `capture` (bool, intercept lower mouse so the root layout does not steal it), `text` / `paste` (target: a built-in name like `"composer"` / `"picker_filter"` / `"browser_filter"`, a function, or `false` to disable), and `keys` (the `{ [chord] = fn | { run, desc } }` table). |
+| `input.extend(name, bindings)` | add bindings to an existing scope. Errors if the scope is unknown — declare it with `input.scope` first. |
+| `input.bindings(scope?)` | discovery: return an array of `{ scope, lhs, desc }` rows for one scope, or every scope when `scope` is `nil` |
 
-**Modes**: at boot the app is in `"dashboard"`; on attach it transitions to
-`opts.start_mode` (default `"insert"`). `"normal"` is reachable with `<Esc>`
-under `opts.vim = true`. `"*"` binds in all modes. Lua may define more modes
-and switch with `actions.mode(name)`.
+**Scopes** at boot: the app starts in `"dashboard"`, transitions to
+`opts.start_scope` (default `"insert"`) on attach. `"normal"` is reachable
+with `<Esc>` under `opts.vim = true`. The bundled default declares `global`,
+`dashboard`, `picker`, `browser`, `permission`, and `insert`; the vim layer
+adds `normal`. Lua may define more and switch with
+`actions.input.set_base(name)`.
+
+**Inheritance** is single-parent: a scope with `inherit = "global"` looks up
+unbound chords in `global`. The validator rejects cycles at load.
 
 **Chord syntax** matches the daemon-adjacent convention: printable keys bare
 (`j`, `G`), modifiers bracketed (`<C-x>`, `<M-x>`, `<S-Tab>`, `<CR>`, `<Esc>`,
-`<BS>`, `<Tab>`, `<Up>`, `<F5>`). Multi-key chords (`gg`, `<leader>q`) are
-supported with a pending-chord timeout (outside `"insert"`; insert mode
-dispatches single chords only so a literal `<` typed into the composer is
-never read as the start of a `<C-x>` chord).
+`<BS>`, `<Tab>`, `<Up>`, `<F5>`). Multi-key chords (`gg`, `<leader>q`) require
+`chords = true` on the scope and use a pending-chord timeout; insert mode
+defaults to `chords = false` so a literal `<` typed into the composer is
+never read as the start of a `<C-x>` chord.
 
 ---
 
 ## yuke.tui.layout
 
-Declare the region tree for a view. Leaves are **built-in widgets** (by
-name, Rust-implemented), **Lua components** (paint handles returned by
-`yuke.tui.paint.register` or `require("yuke.tui.components.*")`), or your
-own paint handles. Install the session-view tree with `set_root` and the
-dashboard tree with `set_dashboard`.
+Declare the region tree for a view. A leaf's `widget` is a **component
+handle** — a paint handle returned by `yuke.tui.paint.register`, or one of
+the bundled modules registered under `package.preload`. Bare name strings
+are no longer accepted: there is one home for "the transcript leaf" and it
+is `require("yuke.tui.components.transcript")`.
+
+Install the session-view tree with `set_root` and the dashboard tree with
+`set_dashboard`.
 
 ```lua
 local L = yuke.tui.layout
 local statusline = require("yuke.tui.components.statusline")
 local footer     = require("yuke.tui.components.footer")
+local transcript = require("yuke.tui.components.transcript")
+local working    = require("yuke.tui.components.working")
+local composer   = require("yuke.tui.components.composer")
 
 yuke.tui.set_root(
   L.rows {
-    L.leaf(statusline,   { size = 1 }),
-    L.leaf("transcript", { grow = 1 }),
-    L.leaf("working",    { fit = true }),
-    L.leaf("composer",   { fit = true, border = { sides = "top" } }),
-    L.leaf(footer,       { size = 1 }),
+    L.leaf(statusline, { size = 1 }),
+    L.leaf(transcript, { grow = 1 }),
+    L.leaf(working,    { fit = true }),
+    L.leaf(composer,   { fit = true, border = { sides = "top" }, focus = { id = "composer" } }),
+    L.leaf(footer,     { size = 1 }),
   }
 )
 ```
@@ -254,7 +304,7 @@ yuke.tui.set_root(
 |---|---|---|
 | `L.rows{ ... }` | children stacked top-to-bottom | a.k.a. vertical split |
 | `L.cols{ ... }` | children left-to-right | a.k.a. horizontal split |
-| `L.leaf(widget, opts?)` | `widget: string \| PaintHandle` | a built-in name, a Lua component handle, or a `paint.register` handle |
+| `L.leaf(handle, opts?)` | `handle: ComponentHandle` | a paint handle from `yuke.tui.paint.register` or a module required from `yuke.tui.components.*` |
 | `yuke.tui.set_root(node)` | install / replace the session view | call again to swap the whole UI |
 | `yuke.tui.set_dashboard(node)` | install / replace the dashboard | the screen shown before a session is attached; defaults to the bull-logo layout |
 
@@ -277,21 +327,29 @@ inherit from `opts.border` (the global default).
 **Padding opts** on any child: a scalar (all four sides), or a
 `{ top, right, bottom, left }` table with `x` / `y` shorthands.
 
-**Built-in widgets** (Rust-implemented leaves; each is replaceable by a paint
-handle or a Lua component):
+**Focus opts**: a `L.leaf` may declare `{ focus = { id = "...", scope = "..." } }`
+to make it a focus target. `id` is required; `scope` (optional) ties the
+leaf to an input scope, so a scope that is active while the leaf is
+focused delivers its text events here. A leaf without `focus` is never
+focused and the focus keys (`<M-h>` / `<M-l>`) skip it.
 
-| Name | Renders |
+**Bundled components** — six require-able modules, all usable as leaves,
+indistinguishable from a `paint.register` handle:
+
+| Module | Renders |
 |---|---|
-| `"transcript"` | the scrolling conversation: user / assistant / tool blocks, **live token streaming** (text and reasoning), tool calls and results |
-| `"composer"` | the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs |
-| `"working"` | the spinner + `opts.working_label` + elapsed time while a turn runs; collapses to zero height when idle (give it `{ fit = true }`) |
+| `yuke.tui.components.statusline` | brand, session title / model / reasoning / permission, queued count, or `offline` |
+| `yuke.tui.components.transcript` | the scrolling conversation: user / assistant / tool blocks, **live token streaming** (text and reasoning), tool calls and results, mouse selection |
+| `yuke.tui.components.working` | the spinner + `opts.working_label` + elapsed time while a turn runs; collapses to zero height when idle (give it `{ fit = true }`) |
+| `yuke.tui.components.composer` | the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs |
+| `yuke.tui.components.logo` | the bull, the name, the entry menu (icon, label, key), centered |
+| `yuke.tui.components.footer` | a transient notice, then the scope hint and in-progress chord |
 
-The statusline, logo, and footer are **Lua components**, not built-in
-names: `require("yuke.tui.components.statusline" \| "logo" \| "footer")`
-returns the bundled paint handle. They are installed by the bundled
-`init.lua`; a user config can reuse, restyle, or replace any of them.
-See [UI components](tui-components/) for the convention and how to
-write your own.
+The statusline, logo, and footer are painted in Lua; the transcript,
+working indicator, and composer are rendered in Rust, but the bundled
+`init.lua` and a user config treat them identically. A user config can
+reuse, restyle, or replace any of them. See [UI components](tui-components/)
+for the convention and how to write your own.
 
 ---
 
@@ -313,11 +371,11 @@ local hud = yuke.tui.paint.register(function(slice, ctx)
   })
 end)
 
--- a paint handle is usable anywhere a widget name is:
+-- a paint handle is a leaf handle; place it in the layout:
 yuke.tui.set_root(yuke.tui.layout.rows {
-  yuke.tui.layout.leaf(hud,            { size = 1 }),
-  yuke.tui.layout.leaf("transcript",   { grow = 1 }),
-  yuke.tui.layout.leaf("composer",     { size = 3 }),
+  yuke.tui.layout.leaf(hud,      { size = 1 }),
+  yuke.tui.layout.leaf(require("yuke.tui.components.transcript"), { grow = 1 }),
+  yuke.tui.layout.leaf(require("yuke.tui.components.composer"),   { size = 3, focus = { id = "composer" } }),
 })
 ```
 
@@ -488,9 +546,9 @@ are scoped to the session, there is no unsubscribe (a `reload` re-runs
 
 Client-side command-palette commands. A `yuke.tui.cmd` runs in the TUI client
 and drives the UI; it is not the daemon's `yuke.on` (the lifecycle hooks that
-run in the engine, between turns). Invoke from a keymap (e.g. `:` in the
+run in the engine, between turns). Invoke from an input scope (e.g. `:` in the
 vim default), from `yuke.tui.actions.run_command(name, args?)`, or from the
-built-in command picker (`yuke.tui.picker("command")`).
+bundled command palette (`yuke.tui.pickers.command(ctx)`).
 
 ```lua
 yuke.tui.cmd.register("new", {
@@ -504,7 +562,7 @@ yuke.tui.cmd.register("new", {
 | Field | Type | Notes |
 |---|---|---|
 | `desc` | string | shown in the command picker |
-| `handler` | `function(args, ctx)` | `args` is the array of positional strings the caller passed to `actions.run_command` (a 1-based Lua array; an empty table when called from a keymap); `ctx` is the read-only state table |
+| `handler` | `function(args, ctx)` | `args` is the array of positional strings the caller passed to `actions.run_command` (a 1-based Lua array; an empty table when called from an input handler); `ctx` is the read-only state table |
 
 Every registered command shows up in `ctx.commands` (as `{ name, desc }`),
 which the bundled command-palette picker uses as its source.
@@ -513,45 +571,44 @@ which the bundled command-palette picker uses as its source.
 
 ## yuke.tui.picker
 
-A picker is either **built-in** (open by kind) or **custom** (a Telescope-style
-spec). Both forms take the same overlay: a fuzzy-filtered list on the left
-with a preview on the right or below. Rust runs the filter, selection,
-overlay, and the live conversation preview; Lua owns the data, formatting,
-preview, and the action.
+A picker is a Telescope-style spec: a fuzzy-filtered list on the left with
+a preview on the right or below. Rust runs the filter, selection, overlay,
+and the live conversation preview; Lua owns the data, formatting, preview,
+and the action. Built-in picker specs live on `yuke.tui.pickers.*`; a user
+config can reuse them, override any field, or write its own.
 
-### Built-in: `yuke.tui.picker(kind)`
+### Bundled: `yuke.tui.pickers.*`
 
-A string opens a built-in picker of that kind:
-
-| Kind | Source | On select |
+| Spec | Source | On select |
 |---|---|---|
-| `"session"` | `ctx.sessions` (fuzzy on the title) with a live conversation preview | attach |
-| `"model"` | `ctx.models` (fuzzy on the full `name`) with a static text preview | stage a model switch for the next send |
-| `"reasoning"` | the active model's `reasoning_levels` (no preview) | stage a reasoning switch for the next send |
-| `"command"` | `ctx.commands` with the command's `desc` as preview | run the command |
+| `pickers.session(ctx)` | `ctx.sessions` (fuzzy on `workspace + title`), rows prefixed with the session's workspace shortened to its last two path components (`"projects/yuke > title"`), with a live conversation preview | attach |
+| `pickers.model(ctx)` | `ctx.models` (fuzzy on the full `name`) | stage a model switch for the next send |
+| `pickers.reasoning(ctx)` | the active model's `reasoning_levels` | stage a reasoning switch for the next send; notifies if the model has no reasoning knob |
+| `pickers.command(ctx)` | `ctx.commands` with the command's `desc` as preview | run the command |
 
 ```lua
-yuke.tui.keymap.set("*", "<C-o>", function(ctx)
-  yuke.tui.picker("model")
-end)
+yuke.tui.input.extend("global", {
+  ["<C-o>"] = function(ctx) yuke.tui.pickers.model(ctx) end,
+  ["<C-p>"] = function(ctx) yuke.tui.pickers.command(ctx) end,
+})
 ```
 
 ### Custom: `yuke.tui.picker(spec)`
 
-A table is a custom spec, stored and routed through its `on_select` on `Enter`.
-
 ```lua
-yuke.tui.keymap.set("dashboard", "s", function(ctx)
-  yuke.tui.picker {
-    title     = " sessions ",
-    layout    = "default",
-    source    = ctx.sessions,
-    format    = function(s) return s.title .. "  " .. s.model end,
-    match     = function(s) return s.title end,
-    preview   = "conversation",
-    on_select = function(s) yuke.tui.actions.attach(s.id) end,
-  }
-end)
+yuke.tui.input.extend("dashboard", {
+  s = function(ctx)
+    yuke.tui.picker {
+      title     = " sessions ",
+      layout    = "default",
+      source    = ctx.sessions,
+      format    = function(s) return s.title .. "  " .. s.model end,
+      match     = function(s) return s.title end,
+      preview   = "conversation",
+      on_select = function(s) yuke.tui.actions.attach(s.id) end,
+    }
+  end,
+})
 ```
 
 | Field | Type | Notes |
@@ -565,8 +622,11 @@ end)
 | `layout` | preset name \| table | the layout (see below); defaults to `"default"` |
 
 Keys inside a picker: type to filter, `↑` / `↓` / `^p` / `^n` move, `Enter`
-selects, `Esc` dismisses. The mouse wheel also moves the highlight while a
-picker is open.
+selects, `Esc` dismisses, `Backspace` deletes a filter character. The
+bundled `picker` input scope (`capture = true`, `text = "picker_filter"`)
+delivers the filter and the movement actions, so a custom picker with no
+explicit `keys` is fully usable. The mouse wheel also moves the highlight
+while a picker is open.
 
 ### Layouts
 
@@ -615,14 +675,14 @@ the permission prompt. A custom picker is just an `overlay.open` over a
 ```lua
 local ov = yuke.tui.overlay.open(
   yuke.tui.layout.leaf(my_paint_handle),
-  { anchor = "center", width = 60, height = 12, border = true, title = "Details", mode = "modal" }
+  { anchor = "center", width = 60, height = 12, border = true, title = "Details", input = "modal" }
 )
 -- ov:close()
 ```
 
 | Function | Notes |
 |---|---|
-| `overlay.open(node, opts) -> handle` | `opts`: `anchor` (`"center"` \| `"top"` \| `"bottom"`, default `"center"`), `width`, `height` (cells; default to 60% of the screen width and half the height), `border` (bool), `title` (string), `mode` (string; a key mode to push while the overlay is open, restored on close) |
+| `overlay.open(node, opts) -> handle` | `opts`: `anchor` (`"center"` \| `"top"` \| `"bottom"`, default `"center"`), `width`, `height` (cells; default to 60% of the screen width and half the height), `border` (bool), `title` (string), `input` (string; a previously-declared input scope that becomes the active scope while the overlay is open, restored on close) |
 | `handle:close()` | dismiss the overlay |
 
 ---
@@ -658,14 +718,14 @@ local status = yuke.tui.paint.register(function(slice, ctx)
 end)
 
 yuke.tui.set_root(yuke.tui.layout.rows {
-  yuke.tui.layout.leaf(status,         { size = 1 }),
-  yuke.tui.layout.leaf("transcript",   { grow = 1 }),
-  yuke.tui.layout.leaf("composer",     { size = 3, min = 1, max = 8 }),
+  yuke.tui.layout.leaf(status,                          { size = 1 }),
+  yuke.tui.layout.leaf(require("yuke.tui.components.transcript"), { grow = 1 }),
+  yuke.tui.layout.leaf(require("yuke.tui.components.composer"),   { size = 3, min = 1, max = 8, focus = { id = "composer" } }),
 })
 
-yuke.tui.keymap.set("*", "<C-o>", function(ctx)
-  yuke.tui.picker("model")
-end)
+yuke.tui.input.extend("global", {
+  ["<C-o>"] = function(ctx) yuke.tui.pickers.model(ctx) end,
+})
 
 yuke.tui.on("turn_error", function(payload)
   yuke.tui.notify(payload.message)

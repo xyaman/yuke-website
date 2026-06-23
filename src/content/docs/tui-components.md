@@ -3,10 +3,11 @@ title: UI components
 description: How the default yuke-tui UI is built from Lua paint handles, how to reuse or replace a bundled component, and how to write your own.
 ---
 
-A **component** is the unit the default UI is built from: one Lua file that returns
-one paint handle, usable as a layout leaf. The bundled statusline, logo, and footer
-are components (`yuke-tui/src/runtime/components/*.lua`); a user config can reuse,
-restyle, or replace any of them, and you write your own the same way.
+A **component** is the unit the default UI is built from: one paint handle
+that drops into a layout leaf. The six bundled components (statusline,
+transcript, working, composer, logo, footer) are registered under
+`yuke.tui.components.*`; a user config can reuse, restyle, or replace any
+of them, and you write your own the same way.
 
 This guide assumes the primitives in [yuke.tui API](tui/): `yuke.tui.paint`
 (the `slice`), the `ctx` state table, `yuke.tui.theme` (styles), and
@@ -25,7 +26,7 @@ return yuke.tui.paint.register(function(slice, ctx)
 end)
 ```
 
-That handle drops into a layout exactly where a built-in widget name would:
+That handle drops into a layout exactly where a built-in name would:
 
 ```lua
 local mine = require("...")           -- or paint.register inline
@@ -33,21 +34,31 @@ yuke.tui.layout.leaf(mine, { size = 1 })
 ```
 
 "State in, view out" still holds: a component only **reads** `ctx` and **draws**
-to the `slice`. It never mutates app state; that is what `yuke.tui.actions.*` and
-keymaps are for.
+to the `slice`. It never mutates app state; that is what `yuke.tui.actions.*`
+and input handlers are for.
 
 ## The bundled components
 
-Loaded by the host under `package.preload`, so they are ordinary modules:
+Loaded by the host under `package.preload`, so they are ordinary modules.
+Three (statusline, logo, footer) are painted in Lua; the other three
+(transcript, working, composer) are Rust-implemented but exposed through
+the same `package.preload` path, so a config places them in leaves
+exactly like the Lua ones:
 
-| Module | Draws | Reads |
+| Module | Renders | Painted in |
 |---|---|---|
-| `yuke.tui.components.statusline` | brand, session title/model/reasoning/permission, queued count, or `offline` | `ctx.connected`, `ctx.session`, `ctx.turn.queued` |
-| `yuke.tui.components.logo` | the bull, the name, the entry menu (icon, label, key), centered | `ctx.theme` |
-| `yuke.tui.components.footer` | a transient notice, then the mode hint and in-progress chord | `ctx.mode`, `ctx.pending_chord`, `ctx.notice` |
+| `yuke.tui.components.statusline` | brand, session title / model / reasoning / permission, queued count, or `offline` | Lua |
+| `yuke.tui.components.transcript` | the scrolling conversation: user / assistant / tool blocks, **live token streaming** (text and reasoning), tool calls and results, mouse selection | Rust |
+| `yuke.tui.components.working` | the spinner + `opts.working_label` + elapsed time while a turn runs; collapses to zero height when idle | Rust |
+| `yuke.tui.components.composer` | the multiline input box: soft-wrap, logical-line cursor, up / down history recall of submitted inputs | Rust |
+| `yuke.tui.components.logo` | the bull, the name, the entry menu (icon, label, key), centered | Lua |
+| `yuke.tui.components.footer` | a transient notice, then the scope hint and in-progress chord | Lua |
 
 ```lua
 local statusline = require("yuke.tui.components.statusline")
+local transcript = require("yuke.tui.components.transcript")
+local working    = require("yuke.tui.components.working")
+local composer   = require("yuke.tui.components.composer")
 local logo       = require("yuke.tui.components.logo")
 local footer     = require("yuke.tui.components.footer")
 ```
@@ -56,22 +67,24 @@ local footer     = require("yuke.tui.components.footer")
 bundled `init.lua` and your config share one instance, which is fine: a handle can
 be placed in more than one leaf).
 
-The transcript, composer, and working indicator are still built-in leaves,
-addressed by name (`"transcript"`, `"composer"`, `"working"`); they are not Lua
-components yet.
-
 ## Using and replacing one
 
 The bundled `init.lua` builds the default screens from the components:
 
 ```lua
 local L = yuke.tui.layout
+local statusline = require("yuke.tui.components.statusline")
+local transcript = require("yuke.tui.components.transcript")
+local working    = require("yuke.tui.components.working")
+local composer   = require("yuke.tui.components.composer")
+local footer     = require("yuke.tui.components.footer")
+
 yuke.tui.set_root(L.rows {
-  L.leaf(statusline,   { size = 1 }),
-  L.leaf("transcript", { grow = 1 }),
-  L.leaf("working",    { fit  = true }),
-  L.leaf("composer",   { fit  = true, border = { sides = "top" } }),
-  L.leaf(footer,       { size = 1 }),
+  L.leaf(statusline, { size = 1 }),
+  L.leaf(transcript, { grow = 1 }),
+  L.leaf(working,    { fit  = true }),
+  L.leaf(composer,   { fit  = true, border = { sides = "top" }, focus = { id = "composer" } }),
+  L.leaf(footer,     { size = 1 }),
 })
 ```
 

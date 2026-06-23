@@ -209,7 +209,7 @@
         ]
       },
       "ClientInfo": {
-        "description": "Identifies the frontend that created a session: its product name and version.\n\nEvery client sends this on [`ClientMessage::CreateSession`]; it is persisted with the session and rides on [`SessionInfo::created_by`], so any client (and a restart) can tell which frontend opened a given session.",
+        "description": "Identifies the frontend that created a session: its product name and version.\n\nEvery client sends this on the first [`ClientMessage::Command`]'s `UserMessage`; it is persisted with the session and rides on [`SessionInfo::created_by`], so any client (and a restart) can tell which frontend opened a given session.",
         "properties": {
           "name": {
             "description": "Frontend product name, e.g. `\"yuke-cli\"` or `\"yuke-tui\"`.",
@@ -229,68 +229,6 @@
       "ClientMessage": {
         "description": "A message a client sends to the daemon.",
         "oneOf": [
-          {
-            "additionalProperties": false,
-            "description": "Opens (or finds) the workspace rooted at `path`; the daemon canonicalizes the path and broadcasts a [`DaemonEvent::WorkspaceCreated`].",
-            "properties": {
-              "CreateWorkspace": {
-                "properties": {
-                  "path": {
-                    "description": "Filesystem path of the workspace root.",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "path"
-                ],
-                "type": "object"
-              }
-            },
-            "required": [
-              "CreateWorkspace"
-            ],
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Creates a session whose cwd is the workspace at `path`, opening that workspace first if it is new; broadcasts a [`DaemonEvent::SessionCreated`].",
-            "properties": {
-              "CreateSession": {
-                "properties": {
-                  "client": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/ClientInfo"
-                      }
-                    ],
-                    "description": "The frontend creating the session, recorded as its creator."
-                  },
-                  "config": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/SessionConfig"
-                      }
-                    ],
-                    "description": "What to build the session from."
-                  },
-                  "path": {
-                    "description": "Filesystem path of the workspace the session runs in.",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "client",
-                  "config",
-                  "path"
-                ],
-                "type": "object"
-              }
-            },
-            "required": [
-              "CreateSession"
-            ],
-            "type": "object"
-          },
           {
             "additionalProperties": false,
             "description": "Requests one session's full message backlog; answered by [`ServerMessage::History`].",
@@ -315,7 +253,7 @@
           },
           {
             "additionalProperties": false,
-            "description": "Routes an [`EngineCommand`] to a session's engine.",
+            "description": "Routes an [`EngineCommand`] to a session's engine. A session is created by its first message: when `session` is unknown and `init` is present, the daemon materializes the session (and opens its workspace) from `init` before routing `command`, so an empty session never exists. `init` is honored only for a `UserMessage` on an unknown session; it is ignored when the session already exists and rejected for any other command.",
             "properties": {
               "Command": {
                 "properties": {
@@ -327,8 +265,19 @@
                     ],
                     "description": "The command to deliver to that session's engine."
                   },
+                  "init": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/SessionInit"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "What to build the session from, present only on its first message. Boxed so a session's many later messages do not each carry its bulk."
+                  },
                   "session": {
-                    "description": "Session to drive.",
+                    "description": "Session to drive, or to create if unknown and `init` is present. The client mints this id for a new session, so its first message and every later one carry the same id.",
                     "type": "string"
                   }
                 },
@@ -372,6 +321,28 @@
               "ListProfiles"
             ],
             "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Browses one directory on the daemon host, answered by [`ServerMessage::DirListing`], so a client can navigate to a folder and open it as a workspace.",
+            "properties": {
+              "ListDir": {
+                "properties": {
+                  "path": {
+                    "description": "Directory to list; `None` starts at the daemon user's home directory.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "ListDir"
+            ],
+            "type": "object"
           },
           {
             "additionalProperties": false,
@@ -682,6 +653,34 @@
           }
         ]
       },
+      "DirListing": {
+        "description": "One directory's contents, answering [`ClientMessage::ListDir`] so a client can browse the daemon host and pick a folder to open as a workspace.",
+        "properties": {
+          "entries": {
+            "description": "The directory's subdirectories, each a candidate workspace root.",
+            "items": {
+              "$ref": "#/components/schemas/FsEntry"
+            },
+            "type": "array"
+          },
+          "parent": {
+            "description": "The parent directory's canonical path, or `None` at the filesystem root, so a client can offer upward navigation.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "path": {
+            "description": "Canonical absolute path of the listed directory.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "path"
+        ],
+        "type": "object"
+      },
       "EngineCommand": {
         "description": "A command a frontend sends to the engine.",
         "oneOf": [
@@ -691,6 +690,14 @@
             "properties": {
               "UserMessage": {
                 "properties": {
+                  "client": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ClientInfo"
+                      }
+                    ],
+                    "description": "The frontend driving this turn, echoed on the turn's [`EngineEvent::UserMessage`] so every client can attribute it."
+                  },
                   "content": {
                     "allOf": [
                       {
@@ -698,6 +705,10 @@
                       }
                     ],
                     "description": "The user's content: plain text or multimodal parts."
+                  },
+                  "id": {
+                    "description": "Client-chosen correlation id, echoed on [`EngineEvent::Queued`] so the message can be retracted with [`EngineCommand::CancelQueued`] while it waits behind a running turn.",
+                    "type": "string"
                   },
                   "model": {
                     "description": "Catalog name to switch to for this and subsequent turns, if any.",
@@ -715,13 +726,37 @@
                   }
                 },
                 "required": [
-                  "content"
+                  "client",
+                  "content",
+                  "id"
                 ],
                 "type": "object"
               }
             },
             "required": [
               "UserMessage"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Retracts a still-queued user message by its `id`. A no-op if the message has already started running (cancel the now-in-flight turn with [`EngineCommand::Cancel`] instead) or the id is unknown.",
+            "properties": {
+              "CancelQueued": {
+                "properties": {
+                  "id": {
+                    "description": "Correlation id of the queued message to drop.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "CancelQueued"
             ],
             "type": "object"
           },
@@ -784,6 +819,30 @@
             "type": "object"
           },
           {
+            "additionalProperties": false,
+            "description": "Changes the per-turn tool-call round cap, effective immediately: a turn already running picks it up at its next round, so lowering the cap below the current round ends that turn with [`ErrorCode::MaxRoundsExceeded`]. `None` means unlimited.",
+            "properties": {
+              "SetMaxRounds": {
+                "properties": {
+                  "max_rounds": {
+                    "description": "The new cap, or `None` for unlimited.",
+                    "format": "uint",
+                    "minimum": 0.0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "SetMaxRounds"
+            ],
+            "type": "object"
+          },
+          {
             "description": "Cancels the in-flight turn.",
             "enum": [
               "Cancel"
@@ -827,7 +886,29 @@
             "description": "The user message that started a turn, echoed so every client and the transcript record it through the same path as assistant and tool events.",
             "properties": {
               "UserMessage": {
-                "$ref": "#/components/schemas/Message"
+                "properties": {
+                  "client": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ClientInfo"
+                      }
+                    ],
+                    "description": "The frontend that drove this turn."
+                  },
+                  "message": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    ],
+                    "description": "The recorded user message."
+                  }
+                },
+                "required": [
+                  "client",
+                  "message"
+                ],
+                "type": "object"
               }
             },
             "required": [
@@ -902,10 +983,32 @@
           },
           {
             "additionalProperties": false,
+            "description": "The session's per-turn round cap changed (its new value, `None` = unlimited).",
+            "properties": {
+              "MaxRoundsChanged": {
+                "format": "uint",
+                "minimum": 0.0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "MaxRoundsChanged"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
             "description": "A user message accepted while a turn was in flight, held to run after it.",
             "properties": {
               "Queued": {
                 "properties": {
+                  "id": {
+                    "description": "Correlation id of the queued message, for [`EngineCommand::CancelQueued`].",
+                    "type": "string"
+                  },
                   "position": {
                     "description": "1-based slot in the pending-message queue.",
                     "format": "uint",
@@ -914,6 +1017,7 @@
                   }
                 },
                 "required": [
+                  "id",
                   "position"
                 ],
                 "type": "object"
@@ -921,6 +1025,28 @@
             },
             "required": [
               "Queued"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A queued user message was retracted before it ran.",
+            "properties": {
+              "QueueCanceled": {
+                "properties": {
+                  "id": {
+                    "description": "Correlation id of the dropped message.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "QueueCanceled"
             ],
             "type": "object"
           },
@@ -1157,6 +1283,29 @@
             "type": "object"
           }
         ]
+      },
+      "FsEntry": {
+        "description": "One directory entry in a [`DirListing`], for a client browsing the daemon host for a folder to open as a workspace. Only directories are listed.",
+        "properties": {
+          "is_git_repo": {
+            "description": "Whether the directory is a git repository (has a `.git` entry), so a client can mark repositories in the picker.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "The directory's own name (its last path component).",
+            "type": "string"
+          },
+          "path": {
+            "description": "Canonical absolute path, ready to hand back as a workspace root.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "is_git_repo",
+          "name",
+          "path"
+        ],
+        "type": "object"
       },
       "MediaSource": {
         "description": "Where a media part's bytes come from.",
@@ -1511,32 +1660,6 @@
           },
           {
             "additionalProperties": false,
-            "description": "Direct reply to [`ClientMessage::CreateSession`], telling the requesting client the id of the session it just created. The broadcast [`DaemonEvent::SessionCreated`] reaches every client and so cannot be attributed to one creator; this ack goes only to the caller.",
-            "properties": {
-              "Created": {
-                "properties": {
-                  "session": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/SessionInfo"
-                      }
-                    ],
-                    "description": "Summary of the newly created session."
-                  }
-                },
-                "required": [
-                  "session"
-                ],
-                "type": "object"
-              }
-            },
-            "required": [
-              "Created"
-            ],
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
             "description": "One session's full conversation, answering [`ClientMessage::History`].",
             "properties": {
               "History": {
@@ -1647,6 +1770,19 @@
             },
             "required": [
               "Profiles"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "One directory's contents, answering [`ClientMessage::ListDir`], sent only to the requesting client.",
+            "properties": {
+              "DirListing": {
+                "$ref": "#/components/schemas/DirListing"
+              }
+            },
+            "required": [
+              "DirListing"
             ],
             "type": "object"
           },
@@ -1791,6 +1927,28 @@
           "reasoning",
           "title",
           "workspace"
+        ],
+        "type": "object"
+      },
+      "SessionInit": {
+        "description": "What the daemon needs to materialize a session on its first message: where it runs and what to build it from. Carried by [`ClientMessage::Command`]'s `init` only for the first message of a client-minted session id; the creating frontend is taken from the accompanying `UserMessage`.",
+        "properties": {
+          "config": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionConfig"
+              }
+            ],
+            "description": "What to build the session from."
+          },
+          "path": {
+            "description": "Filesystem path of the workspace the session runs in; opened if new.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "config",
+          "path"
         ],
         "type": "object"
       },

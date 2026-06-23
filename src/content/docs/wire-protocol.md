@@ -93,15 +93,8 @@ fresh client can render the full tree before the first event arrives.
 session: `"default"` (the daemon's `init.lua`) followed by every
 `init_<NAME>.lua`. See [Daemon mode → Profiles](daemon-mode/#profiles).
 
-### Created
-
-Direct ack to a `CreateSession` request, naming the session it just created.
-The broadcast `Event::SessionCreated` reaches every client and so cannot be
-attributed to one creator; this ack goes only to the caller.
-
-```json
-{ "Created": { "session": { "id": "a1b2...", "...": "..." } } }
-```
+A session does not exist in `Hello.sessions` until it has been **created by
+its first message** (see [Sessions are created on first message](#sessions-are-created-on-first-message) below).
 
 ### History
 
@@ -158,6 +151,29 @@ shape as `Hello`'s `profiles`, sent only to the requesting client.
 { "Profiles": { "profiles": ["default", "work"] } }
 ```
 
+### DirListing
+
+One directory's contents, answering `ClientMessage::ListDir`, sent only to
+the requesting client. Used by a client that wants to browse the daemon
+host (e.g. a workspace-picker overlay).
+
+```json
+{
+  "DirListing": {
+    "path": "/Users/me/projects",
+    "parent": "/Users/me",
+    "entries": [
+      { "name": "yuke",    "path": "/Users/me/projects/yuke",    "is_git_repo": true  },
+      { "name": "scripts", "path": "/Users/me/projects/scripts", "is_git_repo": false }
+    ]
+  }
+}
+```
+
+`entries` lists **directories only**. `is_git_repo` is set when the
+directory contains a `.git` entry, so a client can mark repositories in
+the picker. `parent` is `null` at the filesystem root.
+
 ### Fault
 
 A transport-level failure (unknown id, malformed frame, bad path), distinct
@@ -174,19 +190,47 @@ What the client sends. Variants:
 
 | variant             | payload                                                                 |
 |---------------------|-------------------------------------------------------------------------|
-| `CreateWorkspace`   | `{ path: string }`                                                      |
-| `CreateSession`     | `{ path: string, config: SessionConfig, client: ClientInfo }`           |
 | `History`           | `{ session: SessionId }`                                                |
-| `Command`           | `{ session: SessionId, command: EngineCommand }`                        |
+| `Command`           | `{ session: SessionId, command: EngineCommand, init?: SessionInit }`    |
 | `Blob`              | `{ hash: string }`                                                      |
 | `ListProfiles`      | `{}` (refreshes `Hello.profiles` without reconnecting)                  |
+| `ListDir`           | `{ path?: string }` (browse one directory; `path` omitted starts at the daemon user's home) |
 | `RemoveSession`     | `{ session: SessionId }`                                                |
 | `RemoveWorkspace`   | `{ workspace: WorkspaceId }`                                            |
 | `Subscribe`         | `{ sessions: [SessionId] }` (replaces the focused-set for this connection) |
 
-A `CreateSession` followed by a `Command { UserMessage }` is the minimal
-flow to start a turn. The turn's progress shows up as a stream of `Session`
-events on that session id, ending with `EngineEvent::Agent(Done)` or
+### Sessions are created on first message
+
+There is no `CreateSession` variant: a session is **created by its first
+message**. The client mints a `SessionId` and sends a `Command` whose
+`init: SessionInit` carries the workspace path and `SessionConfig`. The
+daemon materializes the session (opening the workspace if new) before
+routing the command, so an empty session never exists. `init` is honored
+only on a `UserMessage` to an unknown session id; it is ignored once the
+session exists, and rejected on any other command. The client learns
+about the new session from the broadcast `DaemonEvent::SessionCreated`
+on the same id.
+
+```json
+{
+  "Command": {
+    "session": "a1b2c3d4e5f6a7b8",
+    "command": {
+      "UserMessage": {
+        "content": "hello",
+        "client": { "name": "yuke-tui", "version": "0.0.1" }
+      }
+    },
+    "init": {
+      "path": "/Users/me/projects/yuke",
+      "config": { "model": "openai/gpt-4o", "reasoning": "medium" }
+    }
+  }
+}
+```
+
+The turn's progress shows up as a stream of `Session` events on that
+session id, ending with `EngineEvent::Agent(Done)` or
 `EngineEvent::Error`.
 
 ### Subscribing to the content firehose
@@ -222,14 +266,32 @@ takes the profile's `yuke.opts` default.
 auth, and tool set from its own trusted config (`~/.yuke/init.lua`), so a
 remote client never ships a key or Lua.
 
+### SessionInit
+
+The bundle a client sends on the **first** `Command` for a session, telling
+the daemon what session to build. The `path` is opened (or matched) as a
+workspace; the `config` follows the same rules as `SessionConfig` below.
+
+```json
+{
+  "path": "/Users/me/projects/yuke",
+  "config": {
+    "profile": "default",
+    "model": "openai/gpt-4o",
+    "reasoning": "medium"
+  }
+}
+```
+
 ### ClientInfo
 
-Every `CreateSession` carries one. It's persisted with the session and rides
-on `SessionInfo.created_by`, so any client (and a restart) can tell which
+Every session's first `Command { UserMessage }` carries a `client:
+ClientInfo`. It is persisted with the session and rides on
+`SessionInfo.created_by`, so any client (and a restart) can tell which
 frontend opened a given session.
 
 ```json
-{ "name": "yuke-cli", "version": "0.0.1" }
+{ "name": "yuke-tui", "version": "0.0.1" }
 ```
 
 ## Engine commands
@@ -239,7 +301,7 @@ session's engine:
 
 | variant                | payload                                                                  | role                                                       |
 |------------------------|--------------------------------------------------------------------------|------------------------------------------------------------|
-| `UserMessage`          | `{ content, model?, reasoning? }`                                        | new user message driving a turn; optional model/reasoning switch persists for later turns |
+| `UserMessage`          | `{ content, model?, reasoning?, client? }`                              | new user message driving a turn; optional model/reasoning switch persists for later turns. `client` carries `ClientInfo` on the session's first message; it is required there and ignored on later messages. |
 | `PermissionDecision`   | `{ id, allow, remember? }`                                               | reply to a `RequestPermission` engine event                |
 | `SetPermissionMode`    | `{ mode }`                                                               | change the session's mode, effective at the next tool gate |
 | `Cancel`               | `{}`                                                                     | cancel the in-flight turn                                  |
